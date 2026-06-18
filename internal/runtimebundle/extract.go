@@ -43,27 +43,26 @@ func ready(root, hash string) bool {
 }
 
 func extractTarZst(data []byte, root, hash string) error {
-	tmp := root + ".tmp"
-	if err := os.RemoveAll(tmp); err != nil {
+	parent := filepath.Dir(root)
+	if err := os.MkdirAll(parent, 0o755); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(tmp, 0o755); err != nil {
+	tmp, err := os.MkdirTemp(parent, filepath.Base(root)+"-*.tmp")
+	if err != nil {
 		return err
 	}
+	defer os.RemoveAll(tmp)
+
 	if err := untarZst(bytes.NewReader(data), tmp); err != nil {
-		_ = os.RemoveAll(tmp)
 		return err
 	}
 	if err := os.WriteFile(filepath.Join(tmp, markerFile), []byte(hash+"\n"), 0o644); err != nil {
-		_ = os.RemoveAll(tmp)
-		return err
-	}
-	if err := os.RemoveAll(root); err != nil {
-		_ = os.RemoveAll(tmp)
 		return err
 	}
 	if err := os.Rename(tmp, root); err != nil {
-		_ = os.RemoveAll(tmp)
+		if ready(root, hash) {
+			return nil
+		}
 		return err
 	}
 	return nil

@@ -18,9 +18,11 @@ func runIdentify(args []string) error {
 	if fs.NArg() != 1 {
 		return fmt.Errorf("identify requires input path")
 	}
-	if _, err := initialize(opts); err != nil {
+	ctx, err := initialize(opts)
+	if err != nil {
 		return err
 	}
+	defer ctx.Close()
 	info, err := magick.Identify(fs.Arg(0))
 	if err != nil {
 		return err

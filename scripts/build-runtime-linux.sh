@@ -118,7 +118,13 @@ copy_deps() {
     changed=0
     while read -r lib; do
       [ -f "${lib}" ] || continue
-      dest="${root}/lib/$(basename "${lib}")"
+      name="$(basename "${lib}")"
+      case "${name}" in
+        libc.so.*|libpthread.so.*|libm.so.*|libdl.so.*|librt.so.*|libgcc_s.so.*|libstdc++.so.*|libresolv.so.*|ld-linux-*.so.*|libutil.so.*|libcrypt.so.*)
+          continue
+          ;;
+      esac
+      dest="${root}/lib/${name}"
       if [ ! -e "${dest}" ]; then
         cp -a "${lib}" "${dest}" || true
         changed=1

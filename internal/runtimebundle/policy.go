@@ -5,16 +5,20 @@ import (
 	"path/filepath"
 )
 
-func ApplyPolicy(root string, permissive bool) error {
-	dir := filepath.Join(root, "etc", "ImageMagick-7")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
+func ApplyPolicy(permissive bool) (string, error) {
+	dir, err := os.MkdirTemp("", "magickgo-policy-*")
+	if err != nil {
+		return "", err
 	}
 	policy := safePolicyXML
 	if permissive {
 		policy = permissivePolicyXML
 	}
-	return os.WriteFile(filepath.Join(dir, "policy.xml"), []byte(policy), 0o644)
+	if err := os.WriteFile(filepath.Join(dir, "policy.xml"), []byte(policy), 0o644); err != nil {
+		_ = os.RemoveAll(dir)
+		return "", err
+	}
+	return dir, nil
 }
 
 const safePolicyXML = `<?xml version="1.0" encoding="UTF-8"?>

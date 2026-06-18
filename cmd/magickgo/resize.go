@@ -22,8 +22,10 @@ func runResize(args []string) error {
 	if width == 0 {
 		return fmt.Errorf("resize requires --width")
 	}
-	if _, err := initialize(opts); err != nil {
+	ctx, err := initialize(opts)
+	if err != nil {
 		return err
 	}
+	defer ctx.Close()
 	return magick.Resize(fs.Arg(0), fs.Arg(1), width, convertOptions(opts))
 }

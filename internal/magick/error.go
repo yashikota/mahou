@@ -31,12 +31,12 @@ func goString(p *byte) string {
 	if p == nil {
 		return ""
 	}
-	var out []byte
-	for q := uintptr(unsafe.Pointer(p)); ; q++ {
-		b := *(*byte)(unsafe.Pointer(q))
-		if b == 0 {
-			return string(out)
+	var n int
+	for {
+		if *(*byte)(unsafe.Add(unsafe.Pointer(p), n)) == 0 {
+			break
 		}
-		out = append(out, b)
+		n++
 	}
+	return string(unsafe.Slice(p, n))
 }

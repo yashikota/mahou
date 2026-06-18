@@ -24,8 +24,9 @@ type commonOptions struct {
 }
 
 type appContext struct {
-	bundle *runtimebundle.Bundle
-	lib    *magick.Library
+	bundle    *runtimebundle.Bundle
+	lib       *magick.Library
+	configDir string
 }
 
 func main() {
@@ -96,10 +97,10 @@ func parseFlags(fs *flag.FlagSet, args []string) error {
 
 func normalizeFlagOrder(args []string) []string {
 	valueFlags := map[string]bool{
-		"--quality": true,
-		"--format":  true,
-		"--policy":  true,
-		"--width":   true,
+		"quality": true,
+		"format":  true,
+		"policy":  true,
+		"width":   true,
 	}
 	var flags []string
 	var positionals []string
@@ -109,11 +110,14 @@ func normalizeFlagOrder(args []string) []string {
 			positionals = append(positionals, args[i+1:]...)
 			break
 		}
-		if len(arg) > 2 && arg[:2] == "--" {
+		if len(arg) > 1 && arg[0] == '-' {
 			flags = append(flags, arg)
 			name := arg
-			if eq := indexByte(arg, '='); eq >= 0 {
-				name = arg[:eq]
+			for len(name) > 0 && name[0] == '-' {
+				name = name[1:]
+			}
+			if eq := indexByte(name, '='); eq >= 0 {
+				name = name[:eq]
 			}
 			if valueFlags[name] && indexByte(arg, '=') < 0 && i+1 < len(args) {
 				i++
@@ -146,15 +150,23 @@ func initialize(opts commonOptions) (*appContext, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := runtimebundle.ApplyPolicy(bundle.Root, opts.unsafeEnablePDF); err != nil {
-		return nil, err
-	}
-	runtimebundle.ConfigureEnvironment(bundle.Root)
-	lib, err := magick.Load(bundle.Root)
+	configDir, err := runtimebundle.ApplyPolicy(opts.unsafeEnablePDF)
 	if err != nil {
 		return nil, err
 	}
-	return &appContext{bundle: bundle, lib: lib}, nil
+	runtimebundle.ConfigureEnvironment(bundle.Root, configDir)
+	lib, err := magick.Load(bundle.Root)
+	if err != nil {
+		_ = os.RemoveAll(configDir)
+		return nil, err
+	}
+	return &appContext{bundle: bundle, lib: lib, configDir: configDir}, nil
+}
+
+func (c *appContext) Close() {
+	if c != nil && c.configDir != "" {
+		_ = os.RemoveAll(c.configDir)
+	}
 }
 
 func printJSON(v any) error {

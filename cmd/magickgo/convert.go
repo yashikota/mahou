@@ -17,9 +17,11 @@ func runConvert(args []string) error {
 	if fs.NArg() != 2 {
 		return fmt.Errorf("convert requires input and output paths")
 	}
-	if _, err := initialize(opts); err != nil {
+	ctx, err := initialize(opts)
+	if err != nil {
 		return err
 	}
+	defer ctx.Close()
 	return magick.Convert(fs.Arg(0), fs.Arg(1), convertOptions(opts))
 }
 

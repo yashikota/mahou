@@ -15,9 +15,11 @@ func runFormats(args []string) error {
 	if err := parseFlags(fs, args); err != nil {
 		return err
 	}
-	if _, err := initialize(opts); err != nil {
+	ctx, err := initialize(opts)
+	if err != nil {
 		return err
 	}
+	defer ctx.Close()
 	formats := magick.Formats()
 	if opts.json {
 		return printJSON(formats)

@@ -37,10 +37,8 @@ func Formats() []string {
 	}
 	defer magickRelinquishMemory(p)
 	formats := make([]string, 0, n)
-	base := uintptr(p)
-	ptrSize := unsafe.Sizeof(uintptr(0))
-	for i := uintptr(0); i < n; i++ {
-		item := *(**byte)(unsafe.Pointer(base + i*ptrSize))
+	slice := unsafe.Slice((**byte)(p), n)
+	for _, item := range slice {
 		if item != nil {
 			formats = append(formats, goString(item))
 		}

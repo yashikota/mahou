@@ -6,10 +6,10 @@ import (
 	"runtime"
 )
 
-func ConfigureEnvironment(root string) {
+func ConfigureEnvironment(root, configDir string) {
 	coderPath, filterPath := modulePaths(root)
 	setenv("MAGICK_HOME", root)
-	setenv("MAGICK_CONFIGURE_PATH", filepath.Join(root, "etc", "ImageMagick-7"))
+	setenv("MAGICK_CONFIGURE_PATH", configurePath(root, configDir))
 	setenv("MAGICK_CODER_MODULE_PATH", coderPath)
 	setenv("MAGICK_FILTER_MODULE_PATH", filterPath)
 	prependPath("PATH", filepath.Join(root, "bin"))
@@ -32,14 +32,22 @@ func prependPath(k, v string) {
 	_ = os.Setenv(k, v)
 }
 
-func Environment(root string) map[string]string {
+func Environment(root, configDir string) map[string]string {
 	coderPath, filterPath := modulePaths(root)
 	return map[string]string{
 		"MAGICK_HOME":               root,
-		"MAGICK_CONFIGURE_PATH":     filepath.Join(root, "etc", "ImageMagick-7"),
+		"MAGICK_CONFIGURE_PATH":     configurePath(root, configDir),
 		"MAGICK_CODER_MODULE_PATH":  coderPath,
 		"MAGICK_FILTER_MODULE_PATH": filterPath,
 	}
+}
+
+func configurePath(root, configDir string) string {
+	sharedConfig := filepath.Join(root, "etc", "ImageMagick-7")
+	if configDir == "" {
+		return sharedConfig
+	}
+	return configDir + string(os.PathListSeparator) + sharedConfig
 }
 
 func modulePaths(root string) (string, string) {

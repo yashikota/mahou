@@ -40,6 +40,7 @@ func runDoctor(args []string) error {
 	if err != nil {
 		return err
 	}
+	defer ctx.Close()
 	diag := magick.DiagnosticsInfo()
 	report := doctorReport{
 		Target:              targetString(),
@@ -50,7 +51,7 @@ func runDoctor(args []string) error {
 		Version:             diag.Version,
 		QuantumDepth:        diag.QuantumDepth,
 		HDRI:                diag.HDRI,
-		Environment:         runtimebundle.Environment(ctx.bundle.Root),
+		Environment:         runtimebundle.Environment(ctx.bundle.Root, ctx.configDir),
 		Configure:           diag.Configure,
 		FormatSupport:       diag.Support,
 		MissingLibraryNotes: missingLibraryNotes(ctx.bundle.Root),
