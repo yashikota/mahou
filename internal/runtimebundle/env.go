@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 func ConfigureEnvironment(root, configDir string) {
@@ -43,11 +44,18 @@ func Environment(root, configDir string) map[string]string {
 }
 
 func configurePath(root, configDir string) string {
-	sharedConfig := filepath.Join(root, "etc", "ImageMagick-7")
-	if configDir == "" {
-		return sharedConfig
+	paths := []string{}
+	if configDir != "" {
+		paths = append(paths, configDir)
 	}
-	return configDir + string(os.PathListSeparator) + sharedConfig
+	if moduleConfig := firstGlob(
+		filepath.Join(root, "lib", "ImageMagick", "config-*"),
+		filepath.Join(root, "lib", "ImageMagick-*", "config-*"),
+	); moduleConfig != "" {
+		paths = append(paths, moduleConfig)
+	}
+	paths = append(paths, filepath.Join(root, "etc", "ImageMagick-7"))
+	return strings.Join(paths, string(os.PathListSeparator))
 }
 
 func modulePaths(root string) (string, string) {
