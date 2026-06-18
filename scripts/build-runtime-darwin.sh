@@ -45,7 +45,7 @@ copy_deps() {
         changed=1
       fi
     done < <(
-      find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' \) -print0 |
+      find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -name '*.so' \) -print0 |
         xargs -0 otool -L 2>/dev/null |
         awk '/^\t/ {print $1}' |
         sort -u
@@ -78,7 +78,7 @@ rewrite_dep() {
   install_name_tool -change "${dep}" "${replacement}" "${file}" || true
 }
 
-find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' \) | while read -r file; do
+find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -name '*.so' \) | while read -r file; do
   case "${file}" in
     *.dylib)
       install_name_tool -id "@loader_path/$(basename "${file}")" "${file}" || true
@@ -90,7 +90,7 @@ find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' \) | 
 done
 
 remaining_refs="$(
-  find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' \) -print0 |
+  find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -name '*.so' \) -print0 |
     xargs -0 otool -L 2>/dev/null |
     awk '/:$/ {file=$0} /^\t\/opt\/homebrew|^\t\/usr\/local/ {print file " " $1}'
 )"

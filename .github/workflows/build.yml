@@ -46,9 +46,13 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
         run: go build -o "dist/magickgo-${{ matrix.runtime }}" ./cmd/magickgo
       - name: Doctor
-        run: "./dist/magickgo-${{ matrix.runtime }} doctor --verbose"
+        run: |
+          "./dist/magickgo-${{ matrix.runtime }}" doctor --verbose
+          "./dist/magickgo-${{ matrix.runtime }}" doctor --json > doctor.json
+          for format in JPEG PNG WEBP TIFF HEIC JXL SVG PDF; do
+            grep -q "\"${format}\": true" doctor.json
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: magickgo-${{ matrix.runtime }}
           path: dist/magickgo-${{ matrix.runtime }}
-
