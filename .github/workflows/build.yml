@@ -49,7 +49,11 @@ jobs:
         run: |
           "./dist/magickgo-${{ matrix.runtime }}" doctor --verbose
           "./dist/magickgo-${{ matrix.runtime }}" doctor --json > doctor.json
-          for format in JPEG PNG WEBP TIFF HEIC JXL SVG PDF; do
+          formats="JPEG PNG WEBP TIFF HEIC SVG PDF"
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            formats="${formats} JXL"
+          fi
+          for format in ${formats}; do
             grep -q "\"${format}\": true" doctor.json
           done
       - uses: actions/upload-artifact@v4
