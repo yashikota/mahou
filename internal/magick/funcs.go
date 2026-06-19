@@ -10,7 +10,7 @@ var (
 	magickWandGenesis                func()
 	magickGetVersion                 func(*uintptr) *byte
 	magickQueryConfigureOption       func(*byte) *byte
-	magickQueryFormats               func(*byte, *uintptr) unsafe.Pointer
+	magickQueryFormats               func(*byte, *uint64) **byte
 	magickRelinquishMemory           func(unsafe.Pointer) unsafe.Pointer
 	newMagickWand                    func() unsafe.Pointer
 	destroyMagickWand                func(unsafe.Pointer) unsafe.Pointer

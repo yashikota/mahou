@@ -30,14 +30,14 @@ func ConfigureOption(name string) string {
 }
 
 func Formats() []string {
-	var n uintptr
+	var n uint64
 	p := magickQueryFormats(&cstring("*")[0], &n)
 	if p == nil || n == 0 {
 		return nil
 	}
-	defer magickRelinquishMemory(p)
+	defer magickRelinquishMemory(unsafe.Pointer(p))
 	formats := make([]string, 0, n)
-	slice := unsafe.Slice((**byte)(p), n)
+	slice := unsafe.Slice(p, n)
 	for _, item := range slice {
 		if item != nil {
 			formats = append(formats, goString(item))
