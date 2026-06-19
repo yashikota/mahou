@@ -108,6 +108,9 @@ find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -n
   done
 done
 
+find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -name '*.so' \) -print0 |
+  xargs -0 codesign --force --sign - --timestamp=none
+
 remaining_refs="$(
   find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -name '*.so' \) -print0 |
     xargs -0 otool -L 2>/dev/null |
