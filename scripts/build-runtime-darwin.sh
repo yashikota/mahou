@@ -9,10 +9,17 @@ rm -rf "${root}"
 mkdir -p "${root}"/{bin,lib,etc,share}
 
 brew install imagemagick zstd ghostscript fontconfig || true
-prefix="$(brew --prefix)"
+prefix="$(brew --prefix imagemagick)"
+brew_prefix="$(brew --prefix)"
+ghostscript_prefix="$(brew --prefix ghostscript 2>/dev/null || true)"
+fontconfig_prefix="$(brew --prefix fontconfig 2>/dev/null || true)"
 
 cp -a "${prefix}/bin/magick" "${root}/bin/"
-[ -x "${prefix}/bin/gs" ] && cp -a "${prefix}/bin/gs" "${root}/bin/" || true
+if [ -n "${ghostscript_prefix}" ] && [ -x "${ghostscript_prefix}/bin/gs" ]; then
+  cp -a "${ghostscript_prefix}/bin/gs" "${root}/bin/"
+elif [ -x "${brew_prefix}/bin/gs" ]; then
+  cp -a "${brew_prefix}/bin/gs" "${root}/bin/"
+fi
 
 cp -pL "${prefix}"/lib/libMagickWand*.dylib "${root}/lib/"
 cp -pL "${prefix}"/lib/libMagickCore*.dylib "${root}/lib/"
@@ -23,9 +30,21 @@ done
 for dir in "${prefix}"/etc/ImageMagick-*; do
   [ -d "${dir}" ] && cp -a "${dir}" "${root}/etc/"
 done
-for dir in "${prefix}"/share/ImageMagick-* "${prefix}"/share/fonts "${prefix}"/etc/fonts; do
+for dir in "${prefix}"/share/ImageMagick-* "${brew_prefix}"/share/fonts "${fontconfig_prefix}"/etc/fonts; do
   [ -d "${dir}" ] && cp -a "${dir}" "${root}/share/"
 done
+
+if ! find "${root}/lib" -path '*/modules-*/coders/*' \( -name '*.dylib' -o -name '*.so' \) | grep -q .; then
+  echo "ImageMagick coder modules were not copied into the runtime" >&2
+  find "${root}/lib" -maxdepth 3 -type d >&2
+  exit 1
+fi
+
+if ! find "${root}/lib" -path '*/config-*' -type d | grep -q .; then
+  echo "ImageMagick module config directory was not copied into the runtime" >&2
+  find "${root}/lib" -maxdepth 3 -type d >&2
+  exit 1
+fi
 
 copy_deps() {
   local changed=1
