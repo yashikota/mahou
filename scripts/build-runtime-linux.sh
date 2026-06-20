@@ -180,7 +180,9 @@ copy_deps() {
         sort -u
     )
   done
-  [ "${iteration}" -ge 20 ] && echo "WARNING: copy_deps hit iteration cap" >&2
+  if [ "${iteration}" -ge 20 ]; then
+    echo "WARNING: copy_deps hit iteration cap" >&2
+  fi
 }
 copy_deps
 
