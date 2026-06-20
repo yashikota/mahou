@@ -10,7 +10,23 @@ Supported targets:
 - `linux/arm64`
 - `darwin/arm64`
 
-Initial commands:
+Supported image formats:
+
+| Format | Linux | macOS |
+|--------|-------|-------|
+| JPEG   | ✓     | ✓     |
+| PNG    | ✓     | ✓     |
+| WebP   | ✓     | ✓     |
+| TIFF   | ✓     | ✓     |
+| HEIC   | ✓     | ✓     |
+| JXL    | ✓     | ✓     |
+| SVG    | ✓     | ✓     |
+| PDF    | ✓     | ✓     |
+
+PDF and PostScript formats are disabled by the default security policy.
+Use `--policy permissive` to enable them for trusted workflows.
+
+Commands:
 
 ```sh
 magickgo doctor --verbose
