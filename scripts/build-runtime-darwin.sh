@@ -145,7 +145,7 @@ find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -n
       install_name_tool -id "@loader_path/$(basename "${file}")" "${file}" || true
       ;;
   esac
-  otool -L "${file}" | awk '/\/opt\/homebrew|\/usr\/local/ {print $1}' | while read -r dep; do
+  otool -L "${file}" | awk '/^\t\// && !/^\t\/usr\/lib/ && !/^\t\/System/ && !/^\t@/ {print $1}' | while read -r dep; do
     rewrite_dep "${file}" "${dep}"
   done
 done
@@ -156,7 +156,7 @@ find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -n
 remaining_refs="$(
   find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.dylib' -o -name '*.so' \) -print0 |
     xargs -0 otool -L 2>/dev/null |
-    awk '/:$/ {file=$0} /^\t\/opt\/homebrew|^\t\/usr\/local/ {print file " " $1}'
+    awk '/:$/ {file=$0} /^\t\// && !/^\t\/usr\/lib/ && !/^\t\/System/ && !/^\t@/ {print file " " $1}'
 )"
 if [ -n "${remaining_refs}" ]; then
   echo "absolute Homebrew references remain in runtime" >&2
