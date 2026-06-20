@@ -17,41 +17,153 @@ environment, and loads `libMagickWand` dynamically through `purego` (no CGO).
 
 ImageMagick 7.1.2-8 Q16-HDRI with the following delegates enabled:
 
-### Core Formats (all platforms)
+### Modern Image Formats
 
-| Format | Extension(s)         | Read | Write | Notes                      |
-|--------|---------------------|------|-------|----------------------------|
-| JPEG   | `.jpg`, `.jpeg`     | ✓    | ✓     | libjpeg-turbo              |
-| PNG    | `.png`              | ✓    | ✓     | libpng                     |
-| WebP   | `.webp`             | ✓    | ✓     | libwebp                    |
-| TIFF   | `.tiff`, `.tif`     | ✓    | ✓     | libtiff                    |
-| GIF    | `.gif`              | ✓    | ✓     | Built-in                   |
-| BMP    | `.bmp`              | ✓    | ✓     | Built-in                   |
-| HEIC   | `.heic`, `.heif`    | ✓    | ✓     | libheif (HEVC/AV1)         |
-| AVIF   | `.avif`             | ✓    | ✓     | libheif + AOM              |
-| JXL    | `.jxl`              | ✓    | ✓     | libjxl (JPEG XL)           |
-| SVG    | `.svg`, `.svgz`     | ✓    | ✓     | librsvg                    |
-| PDF    | `.pdf`              | ✓    | ✓     | Ghostscript delegate       |
-| EXR    | `.exr`              | ✓    | ✓     | OpenEXR                    |
-| PSD    | `.psd`, `.psb`      | ✓    | ✓     | Photoshop format           |
-| JP2    | `.jp2`, `.j2k`      | ✓    | ✓     | OpenJPEG                   |
+| Format | Extension(s)         | Read | Write | Delegate     | Notes                         |
+|--------|---------------------|------|-------|-------------|-------------------------------|
+| JPEG   | `.jpg`, `.jpeg`     | ✓    | ✓     | libjpeg     | Baseline & progressive        |
+| PNG    | `.png`              | ✓    | ✓     | libpng      | 8/16/32/48/64-bit variants    |
+| APNG   | `.apng`             | ✓    | ✓     | libpng      | Animated PNG                  |
+| WebP   | `.webp`             | ✓    | ✓     | libwebp     | Lossy & lossless              |
+| TIFF   | `.tiff`, `.tif`     | ✓    | ✓     | libtiff     | Including BigTIFF (TIFF64)    |
+| GIF    | `.gif`              | ✓    | ✓     | built-in    | Animated support              |
+| BMP    | `.bmp`              | ✓    | ✓     | built-in    | BMP2/BMP3 variants            |
+| HEIC   | `.heic`, `.heif`    | ✓    | ✓     | libheif     | HEVC codec                    |
+| AVIF   | `.avif`             | ✓    | ✓     | libheif+aom | AV1 Image Format              |
+| JXL    | `.jxl`              | ✓    | ✓     | libjxl      | JPEG XL                       |
+| QOI    | `.qoi`              | ✓    | ✓     | built-in    | Quite OK Image                |
 
-### Additional Formats
+### Vector & Document Formats
 
-| Format   | Extension(s)     | Read | Write | Notes                    |
-|----------|-----------------|------|-------|--------------------------|
-| DPX      | `.dpx`          | ✓    | ✓     | Digital cinema            |
-| TGA      | `.tga`          | ✓    | ✓     | Targa                    |
-| PPM/PGM  | `.ppm`, `.pgm`  | ✓    | ✓     | Netpbm                   |
-| PAM      | `.pam`          | ✓    | ✓     | Portable Arbitrary Map   |
-| FITS     | `.fits`         | ✓    | ✓     | Astronomy                |
-| ICO      | `.ico`          | ✓    | ✓     | Windows icon             |
-| PCX      | `.pcx`          | ✓    | ✓     | PC Paintbrush            |
-| XPM      | `.xpm`          | ✓    | ✓     | X11 pixmap               |
-| FARBFELD | `.ff`           | ✓    | ✓     | suckless format          |
-| QOI      | `.qoi`          | ✓    | ✓     | Quite OK Image           |
-| HDR      | `.hdr`          | ✓    | ✓     | Radiance RGBE            |
-| DJVU     | `.djvu`         | ✓    | —     | Linux only               |
+| Format | Extension(s)         | Read | Write | Delegate     | Notes                         |
+|--------|---------------------|------|-------|-------------|-------------------------------|
+| SVG    | `.svg`, `.svgz`     | ✓    | ✓     | librsvg     | Rasterized on read            |
+| PDF    | `.pdf`, `.pdfa`     | ✓    | ✓     | ghostscript | Multi-page support            |
+| EPS    | `.eps`, `.epsf`     | ✓    | ✓     | ghostscript | Encapsulated PostScript       |
+| PS     | `.ps`               | ✓    | ✓     | ghostscript | PostScript Level 2/3          |
+
+### Professional & Cinema Formats
+
+| Format | Extension(s)         | Read | Write | Delegate    | Notes                         |
+|--------|---------------------|------|-------|------------|-------------------------------|
+| EXR    | `.exr`              | ✓    | ✓     | openexr    | HDR, multi-channel            |
+| PSD    | `.psd`, `.psb`      | ✓    | ✓     | built-in   | Photoshop (incl. Large PSB)   |
+| DPX    | `.dpx`              | ✓    | ✓     | built-in   | SMPTE 268M digital cinema     |
+| CIN    | `.cin`              | ✓    | ✓     | built-in   | Kodak Cineon                  |
+| HDR    | `.hdr`              | ✓    | ✓     | built-in   | Radiance RGBE                 |
+| FITS   | `.fits`, `.fts`     | ✓    | ✓     | built-in   | Astronomy / scientific        |
+| MIFF   | `.miff`             | ✓    | ✓     | built-in   | ImageMagick native            |
+
+### JPEG 2000 Family
+
+| Format | Extension(s)         | Read | Write | Delegate    | Notes                         |
+|--------|---------------------|------|-------|------------|-------------------------------|
+| JP2    | `.jp2`              | ✓    | ✓     | openjp2    | JPEG 2000 Part 1              |
+| J2K    | `.j2k`, `.j2c`      | ✓    | ✓     | openjp2    | JPEG 2000 codestream          |
+| JPC    | `.jpc`              | ✓    | ✓     | openjp2    | JPEG 2000 codestream          |
+| JPM    | `.jpm`              | ✓    | ✓     | openjp2    | JPEG 2000 compound            |
+
+### Legacy & Interchange Formats
+
+| Format   | Extension(s)     | Read | Write | Notes                         |
+|----------|-----------------|------|-------|-------------------------------|
+| TGA      | `.tga`, `.icb`  | ✓    | ✓     | Targa / Truevision            |
+| ICO      | `.ico`          | ✓    | ✓     | Windows icon                  |
+| CUR      | `.cur`          | ✓    | ✓     | Windows cursor                |
+| PCX      | `.pcx`, `.dcx`  | ✓    | ✓     | PC Paintbrush (multi-page)    |
+| SGI      | `.sgi`          | ✓    | ✓     | Silicon Graphics IRIS         |
+| SUN      | `.sun`, `.ras`  | ✓    | ✓     | Sun Rasterfile                |
+| XBM      | `.xbm`          | ✓    | ✓     | X11 bitmap                    |
+| XPM      | `.xpm`          | ✓    | ✓     | X11 pixmap                    |
+| WBMP     | `.wbmp`         | ✓    | ✓     | Wireless bitmap               |
+| PALM     | `.palm`         | ✓    | ✓     | Palm pixmap                   |
+| PICT     | `.pict`, `.pct` | ✓    | ✓     | Apple QuickDraw               |
+| VIFF     | `.viff`         | ✓    | ✓     | Khoros Visualization          |
+| MNG      | `.mng`          | ✓    | ✓     | Multiple-image PNG            |
+| JNG      | `.jng`          | ✓    | ✓     | JPEG Network Graphics         |
+| DDS      | `.dds`          | ✓    | ✓     | DirectDraw Surface (DXT1/5)   |
+| OTB      | `.otb`          | ✓    | ✓     | On-the-air bitmap             |
+| WPG      | `.wpg`          | ✓    | ✓     | WordPerfect Graphics          |
+
+### Netpbm / Portable Pixmap Family
+
+| Format | Extension(s)     | Read | Write | Notes                         |
+|--------|-----------------|------|-------|-------------------------------|
+| PBM    | `.pbm`          | ✓    | ✓     | Portable bitmap (1-bit)       |
+| PGM    | `.pgm`          | ✓    | ✓     | Portable graymap              |
+| PPM    | `.ppm`          | ✓    | ✓     | Portable pixmap               |
+| PNM    | `.pnm`          | ✓    | ✓     | Portable anymap               |
+| PAM    | `.pam`          | ✓    | ✓     | Portable arbitrary map        |
+| PFM    | `.pfm`          | ✓    | ✓     | Portable float map            |
+| PHM    | `.phm`          | ✓    | ✓     | Portable half-float map       |
+
+### Fax & Braille
+
+| Format   | Extension(s)   | Read | Write | Notes                       |
+|----------|---------------|------|-------|-----------------------------|
+| FAX      | `.fax`        | ✓    | ✓     | Group 3 fax                 |
+| G3       | `.g3`         | ✓    | ✓     | CCITT Group 3               |
+| G4       | `.g4`         | ✓    | ✓     | CCITT Group 4               |
+| UBRL     | `.ubrl`       | ✓    | ✓     | Unicode braille             |
+| ISOBRL   | `.isobrl`     | ✓    | ✓     | ISO/TR 11548-1 braille      |
+
+### Miscellaneous
+
+| Format   | Extension(s)   | Read | Write | Notes                       |
+|----------|---------------|------|-------|-----------------------------|
+| FARBFELD | `.ff`         | ✓    | ✓     | suckless image format       |
+| AAI      | `.aai`        | ✓    | ✓     | Dune HD media player        |
+| AVS      | `.avs`        | ✓    | ✓     | AVS X image                 |
+| FL32     | `.fl32`       | ✓    | ✓     | 32-bit float pixels         |
+| SIXEL    | `.sixel`      | ✓    | ✓     | DEC terminal graphics       |
+| VIPS     | `.vips`       | ✓    | ✓     | VIPS image format           |
+| MTV      | `.mtv`        | ✓    | ✓     | MTV Raytracer               |
+| VICAR    | `.vicar`      | ✓    | ✓     | NASA/JPL VICAR              |
+| RGF      | `.rgf`        | ✓    | ✓     | LEGO MINDSTORMS EV3         |
+| HRZ      | `.hrz`        | ✓    | ✓     | Slow-scan TV                |
+| IPL      | `.ipl`        | ✓    | ✓     | IPLab image                 |
+| MPC      | `.mpc`        | ✓    | ✓     | Magick Pixel Cache          |
+
+### Text & Data Output
+
+| Format | Extension(s)   | Read | Write | Notes                        |
+|--------|---------------|------|-------|------------------------------|
+| TXT    | `.txt`        | ✓    | ✓     | Pixel enumeration            |
+| JSON   | `.json`       | —    | ✓     | Image metadata as JSON       |
+| YAML   | `.yaml`       | —    | ✓     | Image metadata as YAML       |
+
+### Camera RAW (Read-only)
+
+| Format | Extension(s)                              | Notes                        |
+|--------|------------------------------------------|------------------------------|
+| DNG    | `.dng`                                   | Adobe Digital Negative       |
+| CR2    | `.cr2`, `.cr3`, `.crw`                   | Canon RAW                    |
+| NEF    | `.nef`, `.nrw`                           | Nikon RAW                    |
+| ARW    | `.arw`                                   | Sony RAW                     |
+| ORF    | `.orf`                                   | Olympus RAW                  |
+| RAF    | `.raf`                                   | Fujifilm RAW                 |
+| RW2    | `.rw2`                                   | Panasonic RAW                |
+| PEF    | `.pef`                                   | Pentax RAW                   |
+| ERF    | `.erf`                                   | Epson RAW                    |
+| SRW    | `.srw`, `.sr2`, `.srf`                   | Samsung RAW                  |
+| KDC    | `.kdc`, `.k25`                           | Kodak RAW                    |
+| MOS    | `.mos`                                   | Leaf RAW                     |
+| MEF    | `.mef`                                   | Mamiya RAW                   |
+| IIQ    | `.iiq`                                   | Phase One RAW                |
+| 3FR    | `.3fr`                                   | Hasselblad RAW               |
+| X3F    | `.x3f`                                   | Sigma RAW                    |
+| MDC    | `.mdc`                                   | Minolta RAW                  |
+| DCR    | `.dcr`                                   | Kodak RAW                    |
+
+### Platform-specific Formats
+
+| Format | Linux | macOS | Notes                         |
+|--------|-------|-------|-------------------------------|
+| DJVU   | ✓     | —     | DjVu (requires djvulibre)     |
+| JBIG   | ✓     | —     | JBIG1 compression             |
+| WMF    | ✓     | —     | Windows Metafile              |
+| FFTW   | ✓     | —     | Fourier transform             |
+| RAW    | ✓     | —     | libraw camera RAW processing  |
 
 ### Delegates
 
