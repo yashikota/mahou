@@ -190,7 +190,7 @@ find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.so*' \) \
 missing_deps="$(
   find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.so*' \) -print0 |
     while IFS= read -r -d '' elf; do
-      env LD_LIBRARY_PATH="${root}/lib" ldd "${elf}" 2>/dev/null |
+      { env LD_LIBRARY_PATH="${root}/lib" ldd "${elf}" 2>/dev/null || true; } |
         awk -v file="${elf}" '/not found/ {print file ": " $0}'
     done
 )"
