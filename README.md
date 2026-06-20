@@ -178,15 +178,16 @@ ImageMagick 7.1.2-8 Q16-HDRI with the following delegates enabled:
 |--------|-----------|--------|
 | HEIC/HEIF/AVIF | Write requires CLI mode | Coder module (`heic.so`) needs `libheif` loaded via dynamic linker at process start; in-process purego binding may not resolve the delegate |
 | JXL | macOS: CLI mode only | `jxl.so` coder module cannot resolve `libjxl` dylib dependencies in-process on macOS; works via CLI or on Linux |
+| PDF/EPS/PS | Blocked by default policy | Ghostscript delegate is security-sensitive; use `--policy permissive` to enable |
 | SVG (write) | Requires `potrace` | SVG vectorization needs external `potrace` binary (not bundled) |
 | DJVU/WMF | Read-only | No encode delegate exists for these formats |
 | Camera RAW | Read-only | libraw provides decode only |
 
 ### Security Policy
 
-All formats including PDF, PostScript, and SVG are enabled by default.
-Use `--policy safe` to block potentially dangerous formats (PDF, PS, EPS,
-MVG, MSL) and delegates (URL, HTTP, HTTPS) in untrusted environments.
+Potentially dangerous formats (PDF, PS, EPS, MVG, MSL) and delegates
+(URL, HTTP, HTTPS) are blocked by default. Use `--policy permissive` to
+enable all formats in trusted environments.
 
 ### Test Coverage
 
@@ -219,7 +220,7 @@ magickgo resize input.jpg output.webp --width 1200   # Resize (aspect-ratio pres
 | `--auto-orient`  | Auto-rotate based on EXIF orientation    |
 | `--format FMT`   | Override output format                   |
 | `--width N`      | Target width for resize (Lanczos filter) |
-| `--policy P`     | `permissive` (default) or `safe`         |
+| `--policy P`     | `safe` (default) or `permissive`         |
 | `--json`         | JSON output (doctor, identify, formats)  |
 | `--verbose`      | Verbose output (doctor)                  |
 
