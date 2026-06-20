@@ -4,16 +4,55 @@ set -euo pipefail
 target="${1:?target is required, e.g. darwin-arm64}"
 out="${2:?output tar.zst path is required}"
 root="${RUNNER_TEMP:-/tmp}/magickgo-runtime-${target}"
+build="${RUNNER_TEMP:-/tmp}/magickgo-build-${target}"
+prefix="${build}/prefix"
+imagemagick_version="${IMAGEMAGICK_VERSION:-7.1.2-8}"
+imagemagick_url="${IMAGEMAGICK_URL:-https://imagemagick.org/archive/releases/ImageMagick-${imagemagick_version}.tar.xz}"
 
-rm -rf "${root}"
+rm -rf "${root}" "${build}"
 mkdir -p "${root}"/{bin,lib,etc,share}
+mkdir -p "${build}" "${prefix}"
 
-brew install jpeg-xl zstd ghostscript fontconfig || true
-brew reinstall --build-from-source imagemagick || true
-prefix="$(brew --prefix imagemagick)"
+brew install jpeg-xl zstd ghostscript fontconfig libheif webp libpng libtiff librsvg freetype openjpeg little-cms2 libraw pango || true
 brew_prefix="$(brew --prefix)"
 ghostscript_prefix="$(brew --prefix ghostscript 2>/dev/null || true)"
 fontconfig_prefix="$(brew --prefix fontconfig 2>/dev/null || true)"
+
+curl -fsSL "${imagemagick_url}" -o "${build}/imagemagick.tar.xz"
+tar -C "${build}" --strip-components=1 -xJf "${build}/imagemagick.tar.xz"
+
+export PKG_CONFIG_PATH="${brew_prefix}/lib/pkgconfig:${brew_prefix}/opt/jpeg-xl/lib/pkgconfig:${brew_prefix}/opt/libheif/lib/pkgconfig:${brew_prefix}/opt/webp/lib/pkgconfig:${brew_prefix}/opt/libpng/lib/pkgconfig:${brew_prefix}/opt/libtiff/lib/pkgconfig:${brew_prefix}/opt/librsvg/lib/pkgconfig:${brew_prefix}/opt/freetype/lib/pkgconfig:${brew_prefix}/opt/openjpeg/lib/pkgconfig:${brew_prefix}/opt/little-cms2/lib/pkgconfig:${brew_prefix}/opt/libraw/lib/pkgconfig:${brew_prefix}/opt/pango/lib/pkgconfig:${brew_prefix}/opt/fontconfig/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+
+(
+  cd "${build}"
+  ./configure \
+    --prefix="${prefix}" \
+    --disable-static \
+    --enable-shared \
+    --with-modules \
+    --with-quantum-depth=16 \
+    --enable-hdri \
+    --with-bzlib \
+    --with-fontconfig \
+    --with-freetype \
+    --with-heic \
+    --with-jpeg \
+    --with-jxl \
+    --with-lcms \
+    --with-lzma \
+    --with-openjp2 \
+    --with-pango \
+    --with-png \
+    --with-raw \
+    --with-rsvg \
+    --with-tiff \
+    --with-webp \
+    --with-xml \
+    --with-zlib \
+    --with-zstd
+  make -j"$(sysctl -n hw.ncpu)"
+  make install
+)
 
 cp -a "${prefix}/bin/magick" "${root}/bin/"
 if [ -n "${ghostscript_prefix}" ] && [ -x "${ghostscript_prefix}/bin/gs" ]; then
