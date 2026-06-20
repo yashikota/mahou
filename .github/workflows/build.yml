@@ -39,7 +39,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: internal/runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst
-          key: runtime-${{ matrix.runtime }}-${{ hashFiles('scripts/build-runtime-*.sh') }}-v3
+          key: runtime-${{ matrix.runtime }}-${{ hashFiles('scripts/build-runtime-*.sh') }}-v4
       - name: Build ImageMagick runtime
         if: steps.cache-runtime.outputs.cache-hit != 'true'
         timeout-minutes: 60

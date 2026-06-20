@@ -126,6 +126,27 @@ copy_deps() {
     soname_map["$(basename "$f")"]="$f"
   done
 
+  copy_lib() {
+    local src="${1}"
+    local name dest
+    [ -n "${src}" ] && [ -f "${src}" ] || return 0
+    name="$(basename "${src}")"
+    case "${name}" in
+      libc.so*|libpthread.so*|libm.so*|libdl.so*|librt.so*|libgcc_s.so*|libstdc++.so*|libresolv.so*|ld-linux-*|libutil.so*|libcrypt.so*|linux-vdso.so*)
+        return 0 ;;
+    esac
+    dest="${root}/lib/${name}"
+    if [ ! -e "${dest}" ]; then
+      cp -aL "${src}" "${dest}" || true
+      changed=1
+    fi
+  }
+
+  bundled_elfs() {
+    find "${root}/bin" "${root}/lib" -type f \
+      \( -perm -0100 -o -name '*.so*' \) -print0
+  }
+
   local changed=1 iteration=0
   while [ "${changed}" -eq 1 ] && [ "${iteration}" -lt 20 ]; do
     changed=0
@@ -140,14 +161,22 @@ copy_deps() {
       if [ ! -e "${dest}" ]; then
         local src="${soname_map[${needed}]:-}"
         if [ -n "${src}" ] && [ -f "${src}" ]; then
-          cp -a "${src}" "${dest}" || true
-          changed=1
+          copy_lib "${src}"
         fi
       fi
     done < <(
-      find "${root}/bin" "${root}/lib" -type f \
-        \( -perm -0100 -o -name '*.so*' \) -print0 |
-        xargs -0 patchelf --print-needed 2>/dev/null |
+      while IFS= read -r -d '' elf; do
+        patchelf --print-needed "${elf}" 2>/dev/null || true
+      done < <(bundled_elfs) | sort -u
+    )
+
+    while IFS= read -r dep; do
+      copy_lib "${dep}"
+    done < <(
+      while IFS= read -r -d '' elf; do
+        env LD_LIBRARY_PATH="${root}/lib" ldd "${elf}" 2>/dev/null || true
+      done < <(bundled_elfs) |
+        awk '/=> \// {print $3} /^\// {print $1}' |
         sort -u
     )
   done
@@ -157,6 +186,19 @@ copy_deps
 
 find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.so*' \) \
   -exec patchelf --force-rpath --set-rpath '$ORIGIN/../lib:$ORIGIN' {} \; 2>/dev/null || true
+
+missing_deps="$(
+  find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.so*' \) -print0 |
+    while IFS= read -r -d '' elf; do
+      env LD_LIBRARY_PATH="${root}/lib" ldd "${elf}" 2>/dev/null |
+        awk -v file="${elf}" '/not found/ {print file ": " $0}'
+    done
+)"
+if [ -n "${missing_deps}" ]; then
+  echo "runtime has unresolved shared library dependencies" >&2
+  echo "${missing_deps}" >&2
+  exit 1
+fi
 
 policy_dir="$(find "${root}/etc" -maxdepth 1 -type d -name 'ImageMagick-*' | sort | tail -n 1)"
 [ -n "${policy_dir}" ] || policy_dir="${root}/etc/ImageMagick-7"
