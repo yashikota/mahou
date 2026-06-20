@@ -51,27 +51,14 @@ jobs:
           fi
       - name: Test
         run: |
-          # Compute the same path that Ensure() will use, so LD_LIBRARY_PATH
-          # points to the correct lib/ directory at process start time.
-          asset="internal/runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst"
-          hash=$(sha256sum "${asset}" | cut -c1-64)
-          short="${hash:0:16}"
+          # Ensure() extracts the runtime and returns the lib path.
+          # We must set LD_LIBRARY_PATH/DYLD_LIBRARY_PATH BEFORE go test
+          # because CGO_ENABLED=0 dlopen cannot pick up setenv changes.
+          libpath=$(go run ./internal/runtimebundle/printlibpath)
           if [ "${{ matrix.goos }}" = "darwin" ]; then
-            runtime_dir="${HOME}/Library/Caches/magickgo/runtime/${{ matrix.runtime }}-${short}"
+            export DYLD_LIBRARY_PATH="${libpath}"
           else
-            runtime_dir="${HOME}/.cache/magickgo/runtime/${{ matrix.runtime }}-${short}"
-          fi
-          # Pre-extract so Ensure() finds it ready
-          if [ ! -f "${runtime_dir}/.magickgo-runtime-ready" ]; then
-            rm -rf "${runtime_dir}"
-            mkdir -p "${runtime_dir}"
-            zstd -d "${asset}" --stdout | tar -C "${runtime_dir}" -xf -
-            echo "${hash}" > "${runtime_dir}/.magickgo-runtime-ready"
-          fi
-          if [ "${{ matrix.goos }}" = "darwin" ]; then
-            export DYLD_LIBRARY_PATH="${runtime_dir}/lib"
-          else
-            export LD_LIBRARY_PATH="${runtime_dir}/lib"
+            export LD_LIBRARY_PATH="${libpath}"
           fi
           go test ./...
       - name: Build binary
