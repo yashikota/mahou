@@ -177,6 +177,7 @@ ImageMagick 7.1.2-8 Q16-HDRI with the following delegates enabled:
 | Format | Limitation | Reason |
 |--------|-----------|--------|
 | HEIC/HEIF/AVIF | Write requires CLI mode | Coder module (`heic.so`) needs `libheif` loaded via dynamic linker at process start; in-process purego binding may not resolve the delegate |
+| JXL | macOS: CLI mode only | `jxl.so` coder module cannot resolve `libjxl` dylib dependencies in-process on macOS; works via CLI or on Linux |
 | PDF/EPS/PS | Blocked by default policy | Ghostscript delegate is security-sensitive; use `--policy permissive` to enable |
 | SVG (write) | Requires `potrace` | SVG vectorization needs external `potrace` binary (not bundled) |
 | DJVU/WMF | Read-only | No encode delegate exists for these formats |
@@ -184,9 +185,9 @@ ImageMagick 7.1.2-8 Q16-HDRI with the following delegates enabled:
 
 ### Security Policy
 
-PDF, PostScript (PS/EPS), MVG, and MSL formats are disabled by the default
-security policy. URL/HTTP/HTTPS delegates are also blocked. Use
-`--policy permissive` to enable all formats for trusted workflows.
+Potentially dangerous formats (PDF, PS, EPS, MVG, MSL) and delegates
+(URL, HTTP, HTTPS) are blocked by default. Use `--policy permissive` to
+enable all formats in trusted environments.
 
 ### Test Coverage
 

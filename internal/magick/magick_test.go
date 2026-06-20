@@ -128,6 +128,11 @@ func TestConvertFormats(t *testing.T) {
 		{name: "JXL", ext: "jxl", linuxOnly: true},
 		{name: "QOI", ext: "qoi", magic: []byte("qoif")},
 
+		// Document formats (require ghostscript delegate)
+		{name: "PDF", ext: "pdf", magic: []byte("%PDF")},
+		{name: "EPS", ext: "eps", magic: []byte("%!")},
+		{name: "PS", ext: "ps", magic: []byte("%!")},
+
 		// Professional / cinema
 		{name: "EXR", ext: "exr", magic: []byte{0x76, 0x2F, 0x31, 0x01}},
 		{name: "PSD", ext: "psd", magic: []byte("8BPS")},
