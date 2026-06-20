@@ -8,7 +8,7 @@ root="${RUNNER_TEMP:-/tmp}/magickgo-runtime-${target}"
 rm -rf "${root}"
 mkdir -p "${root}"/{bin,lib,etc,share}
 
-brew install libjxl zstd ghostscript fontconfig || true
+brew install jpeg-xl zstd ghostscript fontconfig || true
 brew reinstall --build-from-source imagemagick || true
 prefix="$(brew --prefix imagemagick)"
 brew_prefix="$(brew --prefix)"
