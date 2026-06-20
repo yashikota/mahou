@@ -76,6 +76,10 @@ for dir in "${prefix}"/share/ImageMagick-* "${brew_prefix}"/share/fonts "${fontc
   [ -d "${dir}" ] && cp -a "${dir}" "${root}/share/"
 done
 
+# Remove .la files — ltdl uses hard-coded build paths inside them which
+# break at runtime. Without .la, ltdl falls back to dlopen on the .so directly.
+find "${root}/lib" -name '*.la' -delete
+
 if ! find "${root}/lib" -path '*/modules-*/coders/*' \( -name '*.dylib' -o -name '*.so' \) | grep -q .; then
   echo "ImageMagick coder modules were not copied into the runtime" >&2
   find "${root}/lib" -maxdepth 3 -type d >&2
