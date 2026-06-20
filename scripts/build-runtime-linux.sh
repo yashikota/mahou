@@ -164,14 +164,6 @@ mkdir -p "${policy_dir}"
 cat >"${policy_dir}/policy.xml" <<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
 <policymap>
-  <policy domain="coder" rights="none" pattern="PDF" />
-  <policy domain="coder" rights="none" pattern="PS" />
-  <policy domain="coder" rights="none" pattern="EPS" />
-  <policy domain="coder" rights="none" pattern="MVG" />
-  <policy domain="coder" rights="none" pattern="MSL" />
-  <policy domain="delegate" rights="none" pattern="URL" />
-  <policy domain="delegate" rights="none" pattern="HTTP" />
-  <policy domain="delegate" rights="none" pattern="HTTPS" />
 </policymap>
 XML
 
