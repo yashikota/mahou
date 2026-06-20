@@ -13,7 +13,7 @@ rm -rf "${root}" "${build}"
 mkdir -p "${root}"/{bin,lib,etc,share}
 mkdir -p "${build}" "${prefix}"
 
-brew install jpeg-xl zstd ghostscript fontconfig libheif webp libpng libtiff librsvg freetype openjpeg little-cms2 libraw pango || true
+brew install jpeg-xl zstd ghostscript fontconfig libheif webp libpng libtiff librsvg freetype openjpeg little-cms2 libraw pango libtool || true
 brew_prefix="$(brew --prefix)"
 ghostscript_prefix="$(brew --prefix ghostscript 2>/dev/null || true)"
 fontconfig_prefix="$(brew --prefix fontconfig 2>/dev/null || true)"

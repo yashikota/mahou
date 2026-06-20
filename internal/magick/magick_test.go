@@ -1,6 +1,10 @@
 package magick_test
 
 import (
+	"bytes"
+	"image"
+	"image/color"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -28,19 +32,17 @@ func setup(t *testing.T) {
 
 func createTestPNG(t *testing.T, path string) {
 	t.Helper()
-	// Minimal valid 1x1 red PNG (67 bytes)
-	png := []byte{
-		0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, // PNG signature
-		0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
-		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1
-		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, // 8-bit RGB
-		0xde, 0x00, 0x00, 0x00, 0x0c, 0x49, 0x44, 0x41, // IDAT chunk
-		0x54, 0x08, 0xd7, 0x63, 0xf8, 0xcf, 0xc0, 0x00,
-		0x00, 0x00, 0x03, 0x00, 0x01, 0x36, 0x28, 0x19,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, // IEND chunk
-		0x44, 0xae, 0x42, 0x60, 0x82,
+	img := image.NewRGBA(image.Rect(0, 0, 4, 4))
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 4; x++ {
+			img.Set(x, y, color.RGBA{R: 255, G: 0, B: 0, A: 255})
+		}
 	}
-	if err := os.WriteFile(path, png, 0o644); err != nil {
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatalf("encode test png: %v", err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
 		t.Fatalf("write test png: %v", err)
 	}
 }
@@ -55,8 +57,8 @@ func TestIdentify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Identify: %v", err)
 	}
-	if info.Width != 1 || info.Height != 1 {
-		t.Errorf("expected 1x1, got %dx%d", info.Width, info.Height)
+	if info.Width != 4 || info.Height != 4 {
+		t.Errorf("expected 4x4, got %dx%d", info.Width, info.Height)
 	}
 	if info.Format != "PNG" {
 		t.Errorf("expected format PNG, got %s", info.Format)
@@ -112,7 +114,7 @@ func TestResize(t *testing.T) {
 	output := filepath.Join(dir, "resized.png")
 	createTestPNG(t, input)
 
-	err := magick.Resize(input, output, 1, magick.ConvertOptions{})
+	err := magick.Resize(input, output, 2, magick.ConvertOptions{})
 	if err != nil {
 		t.Fatalf("Resize: %v", err)
 	}
@@ -121,8 +123,8 @@ func TestResize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Identify resized: %v", err)
 	}
-	if info.Width != 1 {
-		t.Errorf("expected width 1, got %d", info.Width)
+	if info.Width != 2 {
+		t.Errorf("expected width 2, got %d", info.Width)
 	}
 }
 
