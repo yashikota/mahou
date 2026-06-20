@@ -124,8 +124,8 @@ func TestConvertFormats(t *testing.T) {
 		{name: "BMP2", ext: "bmp", magic: []byte("BM")},
 		{name: "BMP3", ext: "bmp", magic: []byte("BM")},
 
-		// Modern formats (write via built-in coders, not module-based)
-		{name: "JXL", ext: "jxl"},
+		// Modern formats
+		{name: "JXL", ext: "jxl", linuxOnly: true},
 		{name: "QOI", ext: "qoi", magic: []byte("qoif")},
 
 		// Professional / cinema
@@ -255,31 +255,35 @@ func TestRoundTrip(t *testing.T) {
 	setup(t)
 
 	formats := []struct {
-		name string
-		ext  string
+		name      string
+		ext       string
+		linuxOnly bool
 	}{
-		{"JPEG", "jpg"},
-		{"PNG", "png"},
-		{"WebP", "webp"},
-		{"TIFF", "tiff"},
-		{"GIF", "gif"},
-		{"BMP", "bmp"},
-		{"JXL", "jxl"},
-		{"EXR", "exr"},
-		{"TGA", "tga"},
-		{"PPM", "ppm"},
-		{"PAM", "pam"},
-		{"SGI", "sgi"},
-		{"PCX", "pcx"},
-		{"FARBFELD", "ff"},
-		{"QOI", "qoi"},
-		{"JP2", "jp2"},
-		{"MIFF", "miff"},
-		{"DPX", "dpx"},
+		{"JPEG", "jpg", false},
+		{"PNG", "png", false},
+		{"WebP", "webp", false},
+		{"TIFF", "tiff", false},
+		{"GIF", "gif", false},
+		{"BMP", "bmp", false},
+		{"JXL", "jxl", true},
+		{"EXR", "exr", false},
+		{"TGA", "tga", false},
+		{"PPM", "ppm", false},
+		{"PAM", "pam", false},
+		{"SGI", "sgi", false},
+		{"PCX", "pcx", false},
+		{"FARBFELD", "ff", false},
+		{"QOI", "qoi", false},
+		{"JP2", "jp2", false},
+		{"MIFF", "miff", false},
+		{"DPX", "dpx", false},
 	}
 
 	for _, f := range formats {
 		t.Run(f.name, func(t *testing.T) {
+			if f.linuxOnly && runtime.GOOS != "linux" {
+				t.Skipf("%s not supported on %s", f.name, runtime.GOOS)
+			}
 			dir := t.TempDir()
 			input := filepath.Join(dir, "input.png")
 			mid := filepath.Join(dir, "mid."+f.ext)
@@ -313,7 +317,7 @@ func TestFormats(t *testing.T) {
 
 	required := []string{
 		"JPEG", "PNG", "WEBP", "TIFF", "GIF", "BMP",
-		"HEIC", "HEIF", "AVIF", "JXL",
+		"HEIC", "HEIF", "AVIF",
 		"SVG", "SVGZ", "PDF",
 		"EXR", "PSD", "PSB",
 		"JP2", "J2K", "JPC",
@@ -324,6 +328,9 @@ func TestFormats(t *testing.T) {
 		"MIFF", "MNG", "JNG",
 		"APNG", "PJPEG",
 		"FAX", "G3", "G4",
+	}
+	if runtime.GOOS == "linux" {
+		required = append(required, "JXL")
 	}
 	formatSet := make(map[string]struct{}, len(formats))
 	for _, f := range formats {
