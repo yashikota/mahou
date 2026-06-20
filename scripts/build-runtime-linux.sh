@@ -156,7 +156,7 @@ copy_deps() {
 copy_deps
 
 find "${root}/bin" "${root}/lib" -type f \( -perm -0100 -o -name '*.so*' \) \
-  -exec patchelf --set-rpath '$ORIGIN/../lib:$ORIGIN' {} \; 2>/dev/null || true
+  -exec patchelf --force-rpath --set-rpath '$ORIGIN/../lib:$ORIGIN' {} \; 2>/dev/null || true
 
 policy_dir="$(find "${root}/etc" -maxdepth 1 -type d -name 'ImageMagick-*' | sort | tail -n 1)"
 [ -n "${policy_dir}" ] || policy_dir="${root}/etc/ImageMagick-7"
