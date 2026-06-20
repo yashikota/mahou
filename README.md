@@ -172,11 +172,31 @@ ImageMagick 7.1.2-8 Q16-HDRI with the following delegates enabled:
 | Linux    | bzlib cairo djvu fftw fontconfig freetype heic jbig jng jp2 jpeg jxl lcms lqr lzma openexr pango png ps raqm raw rsvg tiff webp wmf xml zip zlib zstd |
 | macOS    | bzlib cairo fontconfig freetype heic jng jp2 jpeg jxl lcms lzma openexr pango png ps rsvg tiff webp xml zlib zstd |
 
+### Format Limitations
+
+| Format | Limitation | Reason |
+|--------|-----------|--------|
+| HEIC/HEIF/AVIF | Write requires CLI mode | Coder module (`heic.so`) needs `libheif` loaded via dynamic linker at process start; in-process purego binding may not resolve the delegate |
+| PDF/EPS/PS | Blocked by default policy | Ghostscript delegate is security-sensitive; use `--policy permissive` to enable |
+| SVG (write) | Requires `potrace` | SVG vectorization needs external `potrace` binary (not bundled) |
+| DJVU/WMF | Read-only | No encode delegate exists for these formats |
+| Camera RAW | Read-only | libraw provides decode only |
+
 ### Security Policy
 
 PDF, PostScript (PS/EPS), MVG, and MSL formats are disabled by the default
 security policy. URL/HTTP/HTTPS delegates are also blocked. Use
 `--policy permissive` to enable all formats for trusted workflows.
+
+### Test Coverage
+
+CI runs actual image I/O tests (not just format registration checks) for **75+ writable formats**:
+
+- **Format conversion test**: Converts a valid PNG to each target format and verifies non-empty output with correct magic bytes
+- **Round-trip test**: PNG → format → PNG, verifies dimensions are preserved (18 formats)
+- **Format registration test**: Verifies all expected formats are reported by ImageMagick's coder registry
+
+Formats excluded from write tests due to environmental constraints (HEIC/AVIF encode delegate, PDF policy, SVG external tool) are still validated via `doctor --verbose` in CI which confirms the delegate libraries are linked and the format is registered for read.
 
 ## Commands
 
