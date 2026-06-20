@@ -34,7 +34,15 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Cache runtime
+        id: cache-runtime
+        uses: actions/cache@v4
+        with:
+          path: internal/runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst
+          key: runtime-${{ matrix.runtime }}-${{ hashFiles('scripts/build-runtime-*.sh') }}-v1
       - name: Build ImageMagick runtime
+        if: steps.cache-runtime.outputs.cache-hit != 'true'
+        timeout-minutes: 60
         run: |
           if [ "${{ matrix.goos }}" = "darwin" ]; then
             bash scripts/build-runtime-darwin.sh "${{ matrix.runtime }}" "internal/runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst"
@@ -53,10 +61,7 @@ jobs:
         run: |
           "./dist/magickgo-${{ matrix.runtime }}" doctor --verbose
           "./dist/magickgo-${{ matrix.runtime }}" doctor --json > doctor.json
-          formats="JPEG PNG WEBP TIFF HEIC SVG PDF"
-          if [ "${{ matrix.goos }}" = "linux" ]; then
-            formats="${formats} JXL"
-          fi
+          formats="JPEG PNG WEBP TIFF HEIC SVG PDF JXL"
           for format in ${formats}; do
             grep -q "\"${format}\": true" doctor.json
           done

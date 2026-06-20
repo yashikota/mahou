@@ -113,30 +113,45 @@ for dir in "${prefix}"/share/ImageMagick-* /usr/share/fonts /usr/share/fontconfi
 done
 
 copy_deps() {
-  local changed=1
-  while [ "${changed}" -eq 1 ]; do
+  declare -A soname_map
+  while IFS= read -r line; do
+    local soname path
+    soname="$(echo "$line" | awk -F' => ' '{gsub(/^[ \t]+/,"",$1); split($1,a," "); print a[1]}')"
+    path="$(echo "$line" | awk -F' => ' '{gsub(/[ \t(].*/,"",$2); print $2}')"
+    [ -n "${path}" ] && [ -f "${path}" ] && soname_map["${soname}"]="${path}"
+  done < <(ldconfig -p | tail -n +2)
+
+  for f in "${prefix}"/lib/*.so*; do
+    [ -f "$f" ] || continue
+    soname_map["$(basename "$f")"]="$f"
+  done
+
+  local changed=1 iteration=0
+  while [ "${changed}" -eq 1 ] && [ "${iteration}" -lt 20 ]; do
     changed=0
-    while read -r lib; do
-      [ -f "${lib}" ] || continue
-      name="$(basename "${lib}")"
-      case "${name}" in
-        libc.so.*|libpthread.so.*|libm.so.*|libdl.so.*|librt.so.*|libgcc_s.so.*|libstdc++.so.*|libresolv.so.*|ld-linux-*.so.*|libutil.so.*|libcrypt.so.*)
-          continue
-          ;;
+    iteration=$((iteration + 1))
+    while read -r needed; do
+      [ -n "${needed}" ] || continue
+      case "${needed}" in
+        libc.so*|libpthread.so*|libm.so*|libdl.so*|librt.so*|libgcc_s.so*|libstdc++.so*|libresolv.so*|ld-linux-*|libutil.so*|libcrypt.so*|linux-vdso.so*)
+          continue ;;
       esac
-      dest="${root}/lib/${name}"
+      local dest="${root}/lib/${needed}"
       if [ ! -e "${dest}" ]; then
-        cp -a "${lib}" "${dest}" || true
-        changed=1
+        local src="${soname_map[${needed}]:-}"
+        if [ -n "${src}" ] && [ -f "${src}" ]; then
+          cp -a "${src}" "${dest}" || true
+          changed=1
+        fi
       fi
     done < <(
       find "${root}/bin" "${root}/lib" -type f \
         \( -perm -0100 -o -name '*.so*' \) -print0 |
-        xargs -0 -r env LD_LIBRARY_PATH="${root}/lib:${prefix}/lib" ldd 2>/dev/null |
-        awk '/=> \// {print $3} /^\// {print $1}' |
+        xargs -0 patchelf --print-needed 2>/dev/null |
         sort -u
     )
   done
+  [ "${iteration}" -ge 20 ] && echo "WARNING: copy_deps hit iteration cap" >&2
 }
 copy_deps
 
