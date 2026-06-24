@@ -1,8 +1,8 @@
-# magick-go
+# mahou
 
 [日本語版](README.ja.md)
 
-`magickgo` is a standalone ImageMagick 7 CLI built in Go.
+`mahou` is a standalone ImageMagick 7 CLI built in Go.
 
 It ships a complete ImageMagick runtime inside the binary, extracts that runtime
 to the user cache on first use, and calls `libMagickWand` through
@@ -37,38 +37,38 @@ bash scripts/build-runtime-linux.sh linux-amd64 pkg/runtimebundle/assets/runtime
 # macOS example
 bash scripts/build-runtime-darwin.sh darwin-arm64 pkg/runtimebundle/assets/runtime-darwin-arm64.tar.zst
 
-CGO_ENABLED=0 go build -o dist/magickgo ./cmd/magickgo
+CGO_ENABLED=0 go build -o dist/mahou ./cmd/mahou
 ```
 
 Run diagnostics:
 
 ```sh
-dist/magickgo doctor --verbose
+dist/mahou doctor --verbose
 ```
 
 Convert and resize images:
 
 ```sh
-dist/magickgo identify input.png
-dist/magickgo convert input.heic output.webp
-dist/magickgo convert input.png output.jpg --quality 85 --strip
-dist/magickgo resize input.jpg output.webp --width 1200
+dist/mahou identify input.png
+dist/mahou convert input.heic output.webp
+dist/mahou convert input.png output.jpg --quality 85 --strip
+dist/mahou resize input.jpg output.webp --width 1200
 ```
 
 ## Commands
 
-`magick-go` can be used exactly like the original `magick` CLI by passing any ImageMagick parameters directly.
+`mahou` can be used exactly like the original `magick` CLI by passing any ImageMagick parameters directly.
 
 If the first argument matches one of the custom helper commands, it runs the fast in-process Go version:
 
 | Command | Purpose |
 | --- | --- |
-| `magickgo doctor [--verbose] [--json]` | Show runtime, library, delegate, and format diagnostics. |
-| `magickgo formats [--json]` | List formats registered by the bundled ImageMagick runtime. |
-| `magickgo identify [options] input.png` | Print image metadata (fast in-process Go version). |
-| `magickgo convert [options] input output` | Convert one image to another format (fast in-process Go version). |
-| `magickgo resize [options] input output --width N` | Resize to a target width with aspect ratio preserved. |
-| `magickgo exec [options] [args...]` | Run the bundled `magick` CLI directly (legacy/explicit subcommand). |
+| `mahou doctor [--verbose] [--json]` | Show runtime, library, delegate, and format diagnostics. |
+| `mahou formats [--json]` | List formats registered by the bundled ImageMagick runtime. |
+| `mahou identify [options] input.png` | Print image metadata (fast in-process Go version). |
+| `mahou convert [options] input output` | Convert one image to another format (fast in-process Go version). |
+| `mahou resize [options] input output --width N` | Resize to a target width with aspect ratio preserved. |
+| `mahou exec [options] [args...]` | Run the bundled `magick` CLI directly (legacy/explicit subcommand). |
 
 ### Common options
 
@@ -85,24 +85,24 @@ If the first argument matches one of the custom helper commands, it runs the fas
 
 ### Direct ImageMagick Command Pass-through
 
-Any unrecognized subcommand or flag (such as standard ImageMagick options like `-resize`, `-rotate`, `-crop`) will be forwarded directly to the bundled ImageMagick binary. This allows `magick-go` to act as a drop-in replacement for the `magick` CLI:
+Any unrecognized subcommand or flag (such as standard ImageMagick options like `-resize`, `-rotate`, `-crop`) will be forwarded directly to the bundled ImageMagick binary. This allows `mahou` to act as a drop-in replacement for the `magick` CLI:
 
 ```sh
 # Run standard ImageMagick commands directly
-dist/magickgo input.png -resize 50% -rotate 90 output.png
+dist/mahou input.png -resize 50% -rotate 90 output.png
 
 # Forward convert with complex flags
-dist/magickgo convert input.png -colorspace Gray -background white -flatten output.jpg
+dist/mahou convert input.png -colorspace Gray -background white -flatten output.jpg
 
-# Set safety policy on direct commands (extracted automatically by magick-go)
-dist/magickgo --policy permissive input.pdf -density 300 output.png
+# Set safety policy on direct commands (extracted automatically by mahou)
+dist/mahou --policy permissive input.pdf -density 300 output.png
 ```
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    User["User"] --> CLI["cmd/magickgo<br/>CLI commands"]
+    User["User"] --> CLI["cmd/mahou<br/>CLI commands"]
     CLI --> Runtime["pkg/runtimebundle<br/>runtime discovery and extraction"]
     Runtime --> Assets["Embedded runtime-&lt;target&gt;.tar.zst<br/>ImageMagick, delegates, modules, config"]
     Runtime --> Cache["User cache<br/>target + runtime hash"]
@@ -119,7 +119,7 @@ Startup flow:
 ```mermaid
 sequenceDiagram
     participant User
-    participant CLI as magickgo command
+    participant CLI as mahou command
     participant Bundle as runtimebundle
     participant Cache as User cache
     participant Policy as policy.xml
@@ -142,8 +142,8 @@ sequenceDiagram
 The runtime is cached by target and bundle hash:
 
 - Linux: under the OS user cache directory, usually
-  `~/.cache/magickgo/runtime`.
-- macOS: `~/Library/Caches/magickgo/runtime`.
+  `~/.cache/mahou/runtime`.
+- macOS: `~/Library/Caches/mahou/runtime`.
 
 ## Runtime contents
 
@@ -169,8 +169,8 @@ cache directory automatically.
 The exact format list comes from the bundled ImageMagick build. Check it with:
 
 ```sh
-magickgo formats
-magickgo doctor --verbose
+mahou formats
+mahou doctor --verbose
 ```
 
 Commonly supported formats include:
@@ -187,7 +187,7 @@ Commonly supported formats include:
 
 ### Differences from Original ImageMagick
 
-`magick-go` is designed as a standalone wrapper with a bundled runtime and has several key differences from a standard system-installed ImageMagick:
+`mahou` is designed as a standalone wrapper with a bundled runtime and has several key differences from a standard system-installed ImageMagick:
 
 1. **CLI Capabilities**: It is **not** a drop-in replacement for the `magick` CLI. It only exposes basic features: metadata identification (`identify`), resizing by width with aspect ratio preservation (`resize`), format conversion (`convert`), format listing (`formats`), and environmental diagnostics (`doctor`). It does not support complex filter pipelines, image composition, drawing, text annotations, cropping, or rotation flags.
 2. **CGO-Free Dynamic Loading**: It uses `purego` to dynamically load the bundled `libMagickWand` shared library at runtime. This avoids compile-time CGO requirements but makes execution dependent on the embedded runtime.
@@ -216,7 +216,7 @@ go test ./...
 Build the CLI after preparing a runtime bundle:
 
 ```sh
-CGO_ENABLED=0 go build -o dist/magickgo ./cmd/magickgo
+CGO_ENABLED=0 go build -o dist/mahou ./cmd/mahou
 ```
 
 The repository does not commit runtime bundles. CI builds them from source with:
@@ -231,7 +231,7 @@ the slow path and unchanged builds reuse the cache.
 
 ## Library Usage
 
-`magick-go` can be imported as a Go library. It requires `CGO_ENABLED=0` to build and doesn't require ImageMagick to be installed on the host system.
+`mahou` can be imported as a Go library. It requires `CGO_ENABLED=0` to build and doesn't require ImageMagick to be installed on the host system.
 
 ```go
 package main
@@ -241,8 +241,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/yashikota/magick-go/pkg/magick"
-	"github.com/yashikota/magick-go/pkg/runtimebundle"
+	"github.com/yashikota/mahou/pkg/magick"
+	"github.com/yashikota/mahou/pkg/runtimebundle"
 )
 
 func main() {

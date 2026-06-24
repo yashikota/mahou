@@ -8,7 +8,7 @@ import (
 
 func ApplyPolicy(permissive bool) (string, error) {
 	cleanupOldPolicies()
-	dir, err := os.MkdirTemp("", "magickgo-policy-*")
+	dir, err := os.MkdirTemp("", "mahou-policy-*")
 	if err != nil {
 		return "", err
 	}
@@ -25,7 +25,7 @@ func ApplyPolicy(permissive bool) (string, error) {
 
 func cleanupOldPolicies() {
 	tempDir := os.TempDir()
-	pattern := filepath.Join(tempDir, "magickgo-policy-*")
+	pattern := filepath.Join(tempDir, "mahou-policy-*")
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
 		return

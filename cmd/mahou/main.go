@@ -14,8 +14,8 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/yashikota/magick-go/pkg/magick"
-	"github.com/yashikota/magick-go/pkg/runtimebundle"
+	"github.com/yashikota/mahou/pkg/magick"
+	"github.com/yashikota/mahou/pkg/runtimebundle"
 )
 
 type commonOptions struct {
@@ -68,7 +68,7 @@ func main() {
 	err := run(os.Args[1:])
 	runCleanups()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "magickgo:", err)
+		fmt.Fprintln(os.Stderr, "mahou:", err)
 		os.Exit(1)
 	}
 }
@@ -108,12 +108,12 @@ func run(args []string) error {
 
 func usage(out *os.File) {
 	fmt.Fprintln(out, `Usage:
-  magickgo doctor [--verbose] [--json]
-  magickgo formats [--json]
-  magickgo identify [options] input.png
-  magickgo convert [options] input.heic output.webp
-  magickgo resize [options] input.jpg output.webp --width 1200
-  magickgo exec [options] [args...]
+  mahou doctor [--verbose] [--json]
+  mahou formats [--json]
+  mahou identify [options] input.png
+  mahou convert [options] input.heic output.webp
+  mahou resize [options] input.jpg output.webp --width 1200
+  mahou exec [options] [args...]
 
 Options:
   --quality N

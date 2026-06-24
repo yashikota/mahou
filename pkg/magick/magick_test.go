@@ -12,8 +12,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/yashikota/magick-go/pkg/magick"
-	"github.com/yashikota/magick-go/pkg/runtimebundle"
+	"github.com/yashikota/mahou/pkg/magick"
+	"github.com/yashikota/mahou/pkg/runtimebundle"
 )
 
 var (

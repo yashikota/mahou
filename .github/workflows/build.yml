@@ -50,9 +50,9 @@ jobs:
       - name: Build Docker image
         if: matrix.goos == 'linux' && steps.cache-runtime.outputs.cache-hit != 'true' && steps.cache-docker.outputs.cache-hit != 'true'
         run: |
-          docker build -t magick-go-builder -f docker/builder.Dockerfile .
+          docker build -t mahou-builder -f docker/builder.Dockerfile .
           mkdir -p /tmp
-          docker save magick-go-builder -o /tmp/docker-image.tar
+          docker save mahou-builder -o /tmp/docker-image.tar
       - name: Load Docker image
         if: matrix.goos == 'linux' && steps.cache-runtime.outputs.cache-hit != 'true' && steps.cache-docker.outputs.cache-hit == 'true'
         run: docker load -i /tmp/docker-image.tar
@@ -66,7 +66,7 @@ jobs:
             docker run --rm \
               -v "$(pwd)":/workspace \
               -w /workspace \
-              magick-go-builder \
+              mahou-builder \
               bash scripts/build-runtime-linux.sh "${{ matrix.runtime }}" "pkg/runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst"
             sudo chmod -R a+rw pkg/runtimebundle/assets/
           fi
@@ -88,11 +88,11 @@ jobs:
           CGO_ENABLED: "0"
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-        run: go build -o "dist/magickgo-${{ matrix.runtime }}" ./cmd/magickgo
+        run: go build -o "dist/mahou-${{ matrix.runtime }}" ./cmd/mahou
       - name: Doctor
         run: |
-          "./dist/magickgo-${{ matrix.runtime }}" doctor --verbose
-          "./dist/magickgo-${{ matrix.runtime }}" doctor --json > doctor.json
+          "./dist/mahou-${{ matrix.runtime }}" doctor --verbose
+          "./dist/mahou-${{ matrix.runtime }}" doctor --json > doctor.json
           formats="JPEG PNG WEBP TIFF HEIC SVG PDF"
           if [ "${{ matrix.goos }}" = "linux" ]; then
             formats="${formats} JXL"
@@ -102,5 +102,5 @@ jobs:
           done
       - uses: actions/upload-artifact@v4
         with:
-          name: magickgo-${{ matrix.runtime }}
-          path: dist/magickgo-${{ matrix.runtime }}
+          name: mahou-${{ matrix.runtime }}
+          path: dist/mahou-${{ matrix.runtime }}

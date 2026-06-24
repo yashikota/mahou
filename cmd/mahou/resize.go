@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/yashikota/magick-go/pkg/magick"
+	"github.com/yashikota/mahou/pkg/magick"
 )
 
 func runResize(args []string) error {

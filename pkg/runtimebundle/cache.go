@@ -35,13 +35,13 @@ func CacheRoot() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return filepath.Join(home, "Library", "Caches", "magickgo", "runtime"), nil
+		return filepath.Join(home, "Library", "Caches", "mahou", "runtime"), nil
 	}
 	base, err := os.UserCacheDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(base, "magickgo", "runtime"), nil
+	return filepath.Join(base, "mahou", "runtime"), nil
 }
 
 func EmbeddedRuntime(target string) ([]byte, string, error) {

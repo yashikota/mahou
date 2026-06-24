@@ -3,8 +3,8 @@ set -euo pipefail
 
 target="${1:?target is required, e.g. linux-amd64}"
 out="${2:?output tar.zst path is required}"
-root="${RUNNER_TEMP:-/tmp}/magickgo-runtime-${target}"
-build="${RUNNER_TEMP:-/tmp}/magickgo-build-${target}"
+root="${RUNNER_TEMP:-/tmp}/mahou-runtime-${target}"
+build="${RUNNER_TEMP:-/tmp}/mahou-build-${target}"
 prefix="${build}/prefix"
 imagemagick_version="${IMAGEMAGICK_VERSION:-7.1.2-8}"
 imagemagick_url="${IMAGEMAGICK_URL:-https://imagemagick.org/archive/releases/ImageMagick-${imagemagick_version}.tar.xz}"
@@ -17,7 +17,7 @@ if ! command -v sudo >/dev/null 2>&1; then
   sudo() { "$@"; }
 fi
 
-if [ -z "${MAGICKGO_BUILDER:-}" ]; then
+if [ -z "${MAHOU_BUILDER:-}" ]; then
   sudo apt-get update
   sudo apt-get install -y \
     autoconf \

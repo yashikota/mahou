@@ -9,7 +9,7 @@ import (
 )
 
 func runExec(args []string) error {
-	var magickgoFlags []string
+	var mahouFlags []string
 	var magickArgs []string
 	dashDashIdx := -1
 	for i, arg := range args {
@@ -19,7 +19,7 @@ func runExec(args []string) error {
 		}
 	}
 	if dashDashIdx >= 0 {
-		magickgoFlags = args[:dashDashIdx]
+		mahouFlags = args[:dashDashIdx]
 		magickArgs = args[dashDashIdx+1:]
 	} else {
 		magickArgs = args
@@ -28,8 +28,8 @@ func runExec(args []string) error {
 	var opts commonOptions
 	fs := flag.NewFlagSet("exec", flag.ContinueOnError)
 	addCommonFlags(fs, &opts)
-	if len(magickgoFlags) > 0 {
-		if err := fs.Parse(magickgoFlags); err != nil {
+	if len(mahouFlags) > 0 {
+		if err := fs.Parse(mahouFlags); err != nil {
 			return err
 		}
 	}
@@ -41,7 +41,7 @@ func runExec(args []string) error {
 	defer ctx.Close()
 
 	if len(magickArgs) == 0 {
-		return fmt.Errorf("exec requires at least one argument for the bundled magick command, e.g. magickgo exec input.png -resize 50%% output.png or magickgo exec --policy permissive -- input.pdf output.png")
+		return fmt.Errorf("exec requires at least one argument for the bundled magick command, e.g. mahou exec input.png -resize 50%% output.png or mahou exec --policy permissive -- input.pdf output.png")
 	}
 
 	magickCmdPath := filepath.Join(ctx.bundle.Root, "bin", "magick")

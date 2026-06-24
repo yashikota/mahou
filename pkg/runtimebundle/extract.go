@@ -13,7 +13,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-const markerFile = ".magickgo-runtime-ready"
+const markerFile = ".mahou-runtime-ready"
 
 func Ensure() (*Bundle, error) {
 	target, err := Target()
@@ -158,6 +158,12 @@ func safeJoin(root, name string) (string, error) {
 func validateLinkTarget(linkDir, target, root string) error {
 	if target == "" {
 		return fmt.Errorf("archive contains empty symlink target")
+	}
+	if filepath.IsAbs(target) {
+		clean := filepath.Clean(target)
+		if strings.HasPrefix(clean, "/etc/alternatives/") || strings.HasPrefix(clean, "/usr/bin/") {
+			return nil
+		}
 	}
 	var full string
 	if filepath.IsAbs(target) {
