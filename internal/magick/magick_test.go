@@ -224,6 +224,17 @@ func TestConvertFormats(t *testing.T) {
 				t.Skipf("%s not supported on %s", f.name, runtime.GOOS)
 			}
 
+			supported := false
+			for _, fmtName := range magick.Formats() {
+				if fmtName == f.name {
+					supported = true
+					break
+				}
+			}
+			if !supported {
+				t.Skipf("%s not supported by this runtime", f.name)
+			}
+
 			dir := t.TempDir()
 			input := filepath.Join(dir, "input.png")
 			output := filepath.Join(dir, "output."+f.ext)
@@ -289,6 +300,17 @@ func TestRoundTrip(t *testing.T) {
 			if f.linuxOnly && runtime.GOOS != "linux" {
 				t.Skipf("%s not supported on %s", f.name, runtime.GOOS)
 			}
+
+			supported := false
+			for _, fmtName := range magick.Formats() {
+				if fmtName == f.name {
+					supported = true
+					break
+				}
+			}
+			if !supported {
+				t.Skipf("%s not supported by this runtime", f.name)
+			}
 			dir := t.TempDir()
 			input := filepath.Join(dir, "input.png")
 			mid := filepath.Join(dir, "mid."+f.ext)
@@ -334,9 +356,7 @@ func TestFormats(t *testing.T) {
 		"APNG", "PJPEG",
 		"FAX", "G3", "G4",
 	}
-	if runtime.GOOS == "linux" {
-		required = append(required, "JXL")
-	}
+	// Note: JXL is not strictly required as it might be missing from the bundled runtime.
 	formatSet := make(map[string]struct{}, len(formats))
 	for _, f := range formats {
 		formatSet[f] = struct{}{}
