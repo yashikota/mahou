@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 
@@ -25,7 +26,7 @@ func getSupportedFormats() map[string]bool {
 	formatsOnce.Do(func() {
 		supportedFormats = make(map[string]bool)
 		for _, f := range magick.Formats() {
-			supportedFormats[f] = true
+			supportedFormats[strings.ToUpper(f)] = true
 		}
 	})
 	return supportedFormats
@@ -239,7 +240,7 @@ func TestConvertFormats(t *testing.T) {
 				t.Skipf("%s not supported on %s", f.name, runtime.GOOS)
 			}
 
-			if !getSupportedFormats()[f.name] {
+			if !getSupportedFormats()[strings.ToUpper(f.name)] {
 				t.Skipf("%s not supported by this runtime", f.name)
 			}
 
@@ -309,7 +310,7 @@ func TestRoundTrip(t *testing.T) {
 				t.Skipf("%s not supported on %s", f.name, runtime.GOOS)
 			}
 
-			if !getSupportedFormats()[f.name] {
+			if !getSupportedFormats()[strings.ToUpper(f.name)] {
 				t.Skipf("%s not supported by this runtime", f.name)
 			}
 			dir := t.TempDir()
