@@ -6,10 +6,16 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
 	"runtime"
+	"strings"
+	"sync"
+	"syscall"
 
-	"github.com/yashikota/magick-go/internal/magick"
-	"github.com/yashikota/magick-go/internal/runtimebundle"
+	"github.com/yashikota/mahou/mahou"
+	"github.com/yashikota/mahou/runtimebundle"
 )
 
 type commonOptions struct {
@@ -25,13 +31,44 @@ type commonOptions struct {
 
 type appContext struct {
 	bundle    *runtimebundle.Bundle
-	lib       *magick.Library
+	lib       *mahou.Library
 	configDir string
+	closeOnce sync.Once
+}
+
+var (
+	cleanupMu sync.Mutex
+	cleanups  []func()
+)
+
+func registerCleanup(f func()) {
+	cleanupMu.Lock()
+	cleanups = append(cleanups, f)
+	cleanupMu.Unlock()
+}
+
+func runCleanups() {
+	cleanupMu.Lock()
+	defer cleanupMu.Unlock()
+	for _, f := range cleanups {
+		f()
+	}
+	cleanups = nil
 }
 
 func main() {
-	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, "magickgo:", err)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		runCleanups()
+		os.Exit(1)
+	}()
+
+	err := run(os.Args[1:])
+	runCleanups()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "mahou:", err)
 		os.Exit(1)
 	}
 }
@@ -47,27 +84,36 @@ func run(args []string) error {
 	case "formats":
 		return runFormats(args[1:])
 	case "identify":
+		if hasUnrecognizedFlags(args[1:], identifyAllowedFlags) {
+			return runDirectMagick(args)
+		}
 		return runIdentify(args[1:])
 	case "convert":
+		if hasUnrecognizedFlags(args[1:], convertAllowedFlags) {
+			return runDirectMagick(args)
+		}
 		return runConvert(args[1:])
 	case "resize":
 		return runResize(args[1:])
+	case "exec":
+		return runExec(args[1:])
 	case "help", "-h", "--help":
 		usage(os.Stdout)
 		return nil
 	default:
-		usage(os.Stderr)
-		return fmt.Errorf("unknown command %q", args[0])
+		// Fallback directly to the bundled ImageMagick command line!
+		return runDirectMagick(args)
 	}
 }
 
 func usage(out *os.File) {
 	fmt.Fprintln(out, `Usage:
-  magickgo doctor [--verbose] [--json]
-  magickgo formats [--json]
-  magickgo identify [options] input.png
-  magickgo convert [options] input.heic output.webp
-  magickgo resize [options] input.jpg output.webp --width 1200
+  mahou doctor [--verbose] [--json]
+  mahou formats [--json]
+  mahou identify [options] input.png
+  mahou convert [options] input.heic output.webp
+  mahou resize [options] input.jpg output.webp --width 1200
+  mahou exec [options] [args...]
 
 Options:
   --quality N
@@ -155,17 +201,23 @@ func initialize(opts commonOptions) (*appContext, error) {
 		return nil, err
 	}
 	runtimebundle.ConfigureEnvironment(bundle.Root, configDir)
-	lib, err := magick.Load(bundle.Root)
+	lib, err := mahou.Load(bundle.Root)
 	if err != nil {
 		_ = os.RemoveAll(configDir)
 		return nil, err
 	}
-	return &appContext{bundle: bundle, lib: lib, configDir: configDir}, nil
+	ctx := &appContext{bundle: bundle, lib: lib, configDir: configDir}
+	registerCleanup(ctx.Close)
+	return ctx, nil
 }
 
 func (c *appContext) Close() {
-	if c != nil && c.configDir != "" {
-		_ = os.RemoveAll(c.configDir)
+	if c != nil {
+		c.closeOnce.Do(func() {
+			if c.configDir != "" {
+				_ = os.RemoveAll(c.configDir)
+			}
+		})
 	}
 }
 
@@ -177,4 +229,85 @@ func printJSON(v any) error {
 
 func targetString() string {
 	return runtime.GOOS + "/" + runtime.GOARCH
+}
+
+var convertAllowedFlags = map[string]bool{
+	"quality":           true,
+	"strip":             true,
+	"auto-orient":       true,
+	"format":            true,
+	"policy":            true,
+	"unsafe-enable-pdf": true,
+	"json":              true,
+	"verbose":           true,
+}
+
+var identifyAllowedFlags = map[string]bool{
+	"policy":            true,
+	"unsafe-enable-pdf": true,
+	"json":              true,
+	"verbose":           true,
+}
+
+func hasUnrecognizedFlags(args []string, allowed map[string]bool) bool {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "-") {
+			name := strings.TrimLeft(arg, "-")
+			if eq := strings.IndexByte(name, '='); eq >= 0 {
+				name = name[:eq]
+			}
+			if !allowed[name] {
+				return true
+			}
+			if name == "quality" || name == "format" || name == "policy" || name == "width" {
+				if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+					i++
+				}
+			}
+		}
+	}
+	return false
+}
+
+func runDirectMagick(args []string) error {
+	opts, cleanArgs, err := extractCommonOptions(args)
+	if err != nil {
+		return err
+	}
+	ctx, err := initialize(opts)
+	if err != nil {
+		return err
+	}
+	defer ctx.Close()
+
+	magickCmdPath := filepath.Join(ctx.bundle.Root, "bin", "magick")
+	cmd := exec.Command(magickCmdPath, cleanArgs...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+func extractCommonOptions(args []string) (commonOptions, []string, error) {
+	opts := commonOptions{
+		policy: "safe",
+	}
+	var cleanArgs []string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--policy" && i+1 < len(args) {
+			opts.policy = args[i+1]
+			i++
+			continue
+		} else if strings.HasPrefix(arg, "--policy=") {
+			opts.policy = strings.TrimPrefix(arg, "--policy=")
+			continue
+		} else if arg == "--unsafe-enable-pdf" {
+			opts.unsafeEnablePDF = true
+			continue
+		}
+		cleanArgs = append(cleanArgs, arg)
+	}
+	return opts, cleanArgs, nil
 }

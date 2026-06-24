@@ -1,4 +1,4 @@
-package magick_test
+package mahou_test
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yashikota/magick-go/internal/magick"
+	"github.com/yashikota/mahou/mahou"
 )
 
 var update = flag.Bool("update", false, "update golden files using host tools (magick/ffmpeg)")
@@ -292,12 +292,12 @@ func compareImages(t *testing.T, pathA, pathB string, maxDiff float64) {
 func TestAllFormatsCompatibility(t *testing.T) {
 	setup(t)
 
-	testdataDir := filepath.Join("testdata")
+	testdataDir := filepath.Join("..", "testdata")
 	readDir := filepath.Join(testdataDir, "read")
 	writeDir := filepath.Join(testdataDir, "write")
 
 	// -------------------------------------------------------------------------
-	// Update Mode: Generate golden files using host tools and magick-go
+	// Update Mode: Generate golden files using host tools and mahou
 	// -------------------------------------------------------------------------
 	if *update {
 		if !hasCommand("magick") {
@@ -317,7 +317,7 @@ func TestAllFormatsCompatibility(t *testing.T) {
 		inputPNG := filepath.Join(testdataDir, "input.png")
 		createSolidPNG(t, inputPNG, 10, 10)
 
-		formats := magick.Formats()
+		formats := mahou.Formats()
 		t.Logf("Updating golden files for %d formats...", len(formats))
 
 		for _, format := range formats {
@@ -363,20 +363,20 @@ func TestAllFormatsCompatibility(t *testing.T) {
 				}
 			}
 
-			// 2. Generate write golden using magick-go
+			// 2. Generate write golden using mahou
 			goOutputFile := filepath.Join(writeDir, fmt.Sprintf("%s.%s", format, ext))
 			removeMatches(t, filepath.Join(writeDir, fmt.Sprintf("%s*", format)))
 
-			opts := magick.ConvertOptions{Format: format}
-			errGoWrite := magick.Convert(inputPNG, goOutputFile, opts)
+			opts := mahou.ConvertOptions{Format: format}
+			errGoWrite := mahou.Convert(inputPNG, goOutputFile, opts)
 			if errGoWrite != nil {
 				removeMatches(t, filepath.Join(writeDir, fmt.Sprintf("%s*", format))) // Clean up
-				t.Logf("magick-go cannot write format %s, skipping write golden generation: %v", format, errGoWrite)
+				t.Logf("mahou cannot write format %s, skipping write golden generation: %v", format, errGoWrite)
 			} else {
 				matchesGo, _ := filepath.Glob(filepath.Join(writeDir, fmt.Sprintf("%s*", format)))
 				if len(matchesGo) == 0 {
 					removeMatches(t, filepath.Join(writeDir, fmt.Sprintf("%s*", format)))
-					t.Logf("magick-go did not generate any files matching %s*", format)
+					t.Logf("mahou did not generate any files matching %s*", format)
 				} else {
 					t.Logf("Generated write golden for %s", format)
 				}
@@ -417,27 +417,27 @@ func TestAllFormatsCompatibility(t *testing.T) {
 		t.Run("Read_"+format, func(t *testing.T) {
 			filePath := filepath.Join(readDir, filename)
 
-			// 1.1 Identify the file using magick-go
-			info, errIdent := magick.Identify(filePath)
+			// 1.1 Identify the file using mahou
+			info, errIdent := mahou.Identify(filePath)
 			if errIdent != nil {
 				if isDelegateError(errIdent) {
-					t.Skipf("magick-go does not support reading %s (no delegate): %v", format, errIdent)
+					t.Skipf("mahou does not support reading %s (no delegate): %v", format, errIdent)
 				}
-				t.Fatalf("magick-go Identify failed: %v", errIdent)
+				t.Fatalf("mahou Identify failed: %v", errIdent)
 			}
 			if info.Width == 0 || info.Height == 0 {
-				t.Fatalf("magick-go Identify returned zero dimensions")
+				t.Fatalf("mahou Identify returned zero dimensions")
 			}
 
 			// 1.2 Convert to PNG
 			dir := t.TempDir()
 			decodedPNG := filepath.Join(dir, "decoded.png")
-			errConv := magick.Convert(filePath, decodedPNG, magick.ConvertOptions{})
+			errConv := mahou.Convert(filePath, decodedPNG, mahou.ConvertOptions{})
 			if errConv != nil {
 				if isDelegateError(errConv) {
-					t.Skipf("magick-go does not support decoding %s (no delegate): %v", format, errConv)
+					t.Skipf("mahou does not support decoding %s (no delegate): %v", format, errConv)
 				}
-				t.Fatalf("magick-go Convert (read) failed: %v", errConv)
+				t.Fatalf("mahou Convert (read) failed: %v", errConv)
 			}
 
 			// Find decoded PNG files (supporting multiple page/layer outputs)
@@ -456,7 +456,7 @@ func TestAllFormatsCompatibility(t *testing.T) {
 				compareImages(t, inputPNG, decodedFile, maxDiff)
 			} else {
 				// For monochrome or highly specialized layouts, just check if it's identified properly
-				decInfo, errDecIdent := magick.Identify(decodedFile)
+				decInfo, errDecIdent := mahou.Identify(decodedFile)
 				if errDecIdent != nil || decInfo.Width == 0 || decInfo.Height == 0 {
 					t.Fatalf("decoded file is invalid or unidentifiable")
 				}
@@ -491,19 +491,19 @@ func TestAllFormatsCompatibility(t *testing.T) {
 			tempOut := filepath.Join(dir, "out"+ext)
 
 			// 2.1 Convert input PNG to target format
-			opts := magick.ConvertOptions{Format: format}
-			errGoWrite := magick.Convert(inputPNG, tempOut, opts)
+			opts := mahou.ConvertOptions{Format: format}
+			errGoWrite := mahou.Convert(inputPNG, tempOut, opts)
 			if errGoWrite != nil {
 				if isDelegateError(errGoWrite) {
-					t.Skipf("magick-go does not support writing %s (no delegate): %v", format, errGoWrite)
+					t.Skipf("mahou does not support writing %s (no delegate): %v", format, errGoWrite)
 				}
-				t.Fatalf("magick-go Convert (write) failed: %v", errGoWrite)
+				t.Fatalf("mahou Convert (write) failed: %v", errGoWrite)
 			}
 
 			// Find temp outputs
 			matchesOut, _ := filepath.Glob(filepath.Join(dir, "out*"))
 			if len(matchesOut) == 0 {
-				t.Fatalf("magick-go write output missing")
+				t.Fatalf("mahou write output missing")
 			}
 			tempOutFile := matchesOut[0]
 
@@ -516,15 +516,15 @@ func TestAllFormatsCompatibility(t *testing.T) {
 			tempPNG := filepath.Join(dir, "temp.png")
 			goldenPNG := filepath.Join(dir, "golden.png")
 
-			if err := magick.Convert(tempOutFile, tempPNG, magick.ConvertOptions{}); err != nil {
+			if err := mahou.Convert(tempOutFile, tempPNG, mahou.ConvertOptions{}); err != nil {
 				if isDelegateError(err) {
-					t.Skipf("magick-go does not support decoding %s (no delegate): %v", format, err)
+					t.Skipf("mahou does not support decoding %s (no delegate): %v", format, err)
 				}
-				t.Fatalf("failed to decode magick-go output: %v", err)
+				t.Fatalf("failed to decode mahou output: %v", err)
 			}
-			if err := magick.Convert(goldenPath, goldenPNG, magick.ConvertOptions{}); err != nil {
+			if err := mahou.Convert(goldenPath, goldenPNG, mahou.ConvertOptions{}); err != nil {
 				if isDelegateError(err) {
-					t.Skipf("magick-go does not support decoding golden %s (no delegate): %v", format, err)
+					t.Skipf("mahou does not support decoding golden %s (no delegate): %v", format, err)
 				}
 				t.Fatalf("failed to decode golden file: %v", err)
 			}
@@ -543,7 +543,7 @@ func TestAllFormatsCompatibility(t *testing.T) {
 				}
 				compareImages(t, matchesGoldenPNG[0], matchesTempPNG[0], maxDiff)
 			} else {
-				decInfo, errDecIdent := magick.Identify(matchesTempPNG[0])
+				decInfo, errDecIdent := mahou.Identify(matchesTempPNG[0])
 				if errDecIdent != nil || decInfo.Width == 0 || decInfo.Height == 0 {
 					t.Fatalf("decoded output is invalid or unidentifiable")
 				}

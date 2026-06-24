@@ -1,4 +1,4 @@
-module github.com/yashikota/magick-go
+module github.com/yashikota/mahou
 
 go 1.26.3
 
