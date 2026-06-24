@@ -8,13 +8,28 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 
 	"github.com/yashikota/magick-go/internal/magick"
 	"github.com/yashikota/magick-go/internal/runtimebundle"
 )
 
-var testBundle *runtimebundle.Bundle
+var (
+	testBundle       *runtimebundle.Bundle
+	supportedFormats map[string]bool
+	formatsOnce      sync.Once
+)
+
+func getSupportedFormats() map[string]bool {
+	formatsOnce.Do(func() {
+		supportedFormats = make(map[string]bool)
+		for _, f := range magick.Formats() {
+			supportedFormats[f] = true
+		}
+	})
+	return supportedFormats
+}
 
 func setup(t *testing.T) {
 	t.Helper()
@@ -224,14 +239,7 @@ func TestConvertFormats(t *testing.T) {
 				t.Skipf("%s not supported on %s", f.name, runtime.GOOS)
 			}
 
-			supported := false
-			for _, fmtName := range magick.Formats() {
-				if fmtName == f.name {
-					supported = true
-					break
-				}
-			}
-			if !supported {
+			if !getSupportedFormats()[f.name] {
 				t.Skipf("%s not supported by this runtime", f.name)
 			}
 
@@ -301,14 +309,7 @@ func TestRoundTrip(t *testing.T) {
 				t.Skipf("%s not supported on %s", f.name, runtime.GOOS)
 			}
 
-			supported := false
-			for _, fmtName := range magick.Formats() {
-				if fmtName == f.name {
-					supported = true
-					break
-				}
-			}
-			if !supported {
+			if !getSupportedFormats()[f.name] {
 				t.Skipf("%s not supported by this runtime", f.name)
 			}
 			dir := t.TempDir()

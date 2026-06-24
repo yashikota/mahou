@@ -184,12 +184,7 @@ func isDelegateError(err error) bool {
 	if msg == "" || msg == "imagemagick operation failed" {
 		return true
 	}
-	return strings.Contains(msg, "no decode delegate") ||
-		strings.Contains(msg, "no encode delegate") ||
-		strings.Contains(msg, "nodecodedelegate") ||
-		strings.Contains(msg, "noencodedelegate") ||
-		strings.Contains(msg, "no delegate") ||
-		strings.Contains(msg, "delegate failed") ||
+	return strings.Contains(msg, "delegate") ||
 		strings.Contains(msg, "missing an image filename") ||
 		strings.Contains(msg, "bad value") ||
 		strings.Contains(msg, "no pixels defined in cache")
@@ -268,6 +263,9 @@ func compareImages(t *testing.T, pathA, pathB string, maxDiff float64) {
 
 	if boundsA.Dx() != boundsB.Dx() || boundsA.Dy() != boundsB.Dy() {
 		t.Fatalf("image dimensions mismatch: %dx%d vs %dx%d", boundsA.Dx(), boundsA.Dy(), boundsB.Dx(), boundsB.Dy())
+	}
+	if boundsA.Dx() == 0 || boundsA.Dy() == 0 {
+		t.Fatalf("image dimensions cannot be zero")
 	}
 
 	var totalDiff int64
@@ -394,14 +392,14 @@ func TestAllFormatsCompatibility(t *testing.T) {
 	// -------------------------------------------------------------------------
 	inputPNG := filepath.Join(testdataDir, "input.png")
 	if _, err := os.Stat(inputPNG); os.IsNotExist(err) {
-		t.Skip("testdata/input.png does not exist. Run with -update flag first to generate golden files.")
+		t.Fatalf("testdata/input.png does not exist. Run with -update flag first to generate golden files.")
 	}
 
 	// 1. Verify Read
 	readFiles, err := os.ReadDir(readDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			t.Skip("testdata/read directory does not exist. Run with -update flag first.")
+			t.Fatalf("testdata/read directory does not exist. Run with -update flag first.")
 		}
 		t.Fatalf("read readDir: %v", err)
 	}
@@ -470,7 +468,7 @@ func TestAllFormatsCompatibility(t *testing.T) {
 	writeFiles, err := os.ReadDir(writeDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			t.Skip("testdata/write directory does not exist. Run with -update flag first.")
+			t.Fatalf("testdata/write directory does not exist. Run with -update flag first.")
 		}
 		t.Fatalf("read writeDir: %v", err)
 	}
