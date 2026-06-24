@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/yashikota/mahou/pkg/runtimebundle"
+	"github.com/yashikota/mahou/runtimebundle"
 )
 
 func main() {

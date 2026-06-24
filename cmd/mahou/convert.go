@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/yashikota/mahou/pkg/magick"
+	"github.com/yashikota/mahou/magick"
 )
 
 func runConvert(args []string) error {

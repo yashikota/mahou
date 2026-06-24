@@ -11,8 +11,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/yashikota/mahou/pkg/magick"
-	"github.com/yashikota/mahou/pkg/runtimebundle"
+	"github.com/yashikota/mahou/magick"
+	"github.com/yashikota/mahou/runtimebundle"
 )
 
 type doctorReport struct {

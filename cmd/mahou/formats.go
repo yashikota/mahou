@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yashikota/mahou/pkg/magick"
+	"github.com/yashikota/mahou/magick"
 )
 
 func runFormats(args []string) error {

@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yashikota/mahou/pkg/magick"
+	"github.com/yashikota/mahou/magick"
 )
 
 var update = flag.Bool("update", false, "update golden files using host tools (magick/ffmpeg)")
@@ -292,7 +292,7 @@ func compareImages(t *testing.T, pathA, pathB string, maxDiff float64) {
 func TestAllFormatsCompatibility(t *testing.T) {
 	setup(t)
 
-	testdataDir := filepath.Join("..", "..", "testdata")
+	testdataDir := filepath.Join("..", "testdata")
 	readDir := filepath.Join(testdataDir, "read")
 	writeDir := filepath.Join(testdataDir, "write")
 

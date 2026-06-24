@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/yashikota/mahou/pkg/magick"
+	"github.com/yashikota/mahou/magick"
 )
 
 func runIdentify(args []string) error {

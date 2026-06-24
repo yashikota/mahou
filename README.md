@@ -32,10 +32,10 @@ Build a runtime bundle, then build the Go CLI:
 
 ```sh
 # Linux example
-bash scripts/build-runtime-linux.sh linux-amd64 pkg/runtimebundle/assets/runtime-linux-amd64.tar.zst
+bash scripts/build-runtime-linux.sh linux-amd64 runtimebundle/assets/runtime-linux-amd64.tar.zst
 
 # macOS example
-bash scripts/build-runtime-darwin.sh darwin-arm64 pkg/runtimebundle/assets/runtime-darwin-arm64.tar.zst
+bash scripts/build-runtime-darwin.sh darwin-arm64 runtimebundle/assets/runtime-darwin-arm64.tar.zst
 
 CGO_ENABLED=0 go build -o dist/mahou ./cmd/mahou
 ```
@@ -103,12 +103,12 @@ dist/mahou --policy permissive input.pdf -density 300 output.png
 ```mermaid
 flowchart TD
     User["User"] --> CLI["cmd/mahou<br/>CLI commands"]
-    CLI --> Runtime["pkg/runtimebundle<br/>runtime discovery and extraction"]
+    CLI --> Runtime["runtimebundle<br/>runtime discovery and extraction"]
     Runtime --> Assets["Embedded runtime-&lt;target&gt;.tar.zst<br/>ImageMagick, delegates, modules, config"]
     Runtime --> Cache["User cache<br/>target + runtime hash"]
     CLI --> Policy["Temporary policy.xml<br/>safe or permissive"]
     CLI --> Env["ImageMagick environment<br/>MAGICK_HOME, module paths, library path"]
-    Env --> Wand["pkg/magick<br/>purego bindings"]
+    Env --> Wand["magick<br/>purego bindings"]
     Wand --> Lib["libMagickWand<br/>bundled shared library"]
     Lib --> Modules["ImageMagick coder modules<br/>delegates and filters"]
     Lib --> Output["Converted image<br/>metadata or diagnostics"]
@@ -123,7 +123,7 @@ sequenceDiagram
     participant Bundle as runtimebundle
     participant Cache as User cache
     participant Policy as policy.xml
-    participant Magick as pkg/magick
+    participant Magick as magick
     participant Wand as libMagickWand
 
     User->>CLI: run convert / resize / identify / doctor
@@ -222,8 +222,8 @@ CGO_ENABLED=0 go build -o dist/mahou ./cmd/mahou
 The repository does not commit runtime bundles. CI builds them from source with:
 
 ```sh
-bash scripts/build-runtime-linux.sh linux-amd64 pkg/runtimebundle/assets/runtime-linux-amd64.tar.zst
-bash scripts/build-runtime-darwin.sh darwin-arm64 pkg/runtimebundle/assets/runtime-darwin-arm64.tar.zst
+bash scripts/build-runtime-linux.sh linux-amd64 runtimebundle/assets/runtime-linux-amd64.tar.zst
+bash scripts/build-runtime-darwin.sh darwin-arm64 runtimebundle/assets/runtime-darwin-arm64.tar.zst
 ```
 
 CI caches runtime archives by script content hash, so the first runtime build is
@@ -241,8 +241,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/yashikota/mahou/pkg/magick"
-	"github.com/yashikota/mahou/pkg/runtimebundle"
+	"github.com/yashikota/mahou/magick"
+	"github.com/yashikota/mahou/runtimebundle"
 )
 
 func main() {

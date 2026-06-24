@@ -1,2 +1,2 @@
 dist/
-pkg/runtimebundle/assets/runtime-*.tar.zst
+runtimebundle/assets/runtime-*.tar.zst
