@@ -1,6 +1,12 @@
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish
+        required: true
+        type: string
   push:
     tags:
       - "v*"
@@ -9,24 +15,150 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            goos: linux
+            goarch: amd64
+            runtime: linux-amd64
+            archive_os: linux
+          - os: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+            runtime: linux-arm64
+            archive_os: linux
+          - os: macos-14
+            goos: darwin
+            goarch: arm64
+            runtime: darwin-arm64
+            archive_os: mac
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # v6.1.0
         with:
           go-version-file: go.mod
           cache: true
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6.4.0
+      - name: Cache runtime
+        id: cache-runtime
+        uses: actions/cache@v4
         with:
-          distribution: goreleaser
-          version: '~> v2'
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst
+          key: runtime-${{ matrix.runtime }}-${{ hashFiles('scripts/build-runtime-*.sh') }}-v5
 
+      - name: Cache Docker image
+        if: matrix.goos == 'linux' && steps.cache-runtime.outputs.cache-hit != 'true'
+        id: cache-docker
+        uses: actions/cache@v4
+        with:
+          path: /tmp/docker-image-${{ matrix.runtime }}.tar
+          key: docker-image-${{ matrix.runtime }}-${{ hashFiles('docker/builder.Dockerfile') }}
+
+      - name: Build Docker image
+        if: matrix.goos == 'linux' && steps.cache-runtime.outputs.cache-hit != 'true' && steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          docker build -t mahou-builder -f docker/builder.Dockerfile .
+          mkdir -p /tmp
+          docker save mahou-builder -o /tmp/docker-image-${{ matrix.runtime }}.tar
+
+      - name: Load Docker image
+        if: matrix.goos == 'linux' && steps.cache-runtime.outputs.cache-hit != 'true' && steps.cache-docker.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/docker-image-${{ matrix.runtime }}.tar
+
+      - name: Build ImageMagick runtime
+        if: steps.cache-runtime.outputs.cache-hit != 'true'
+        timeout-minutes: 60
+        run: |
+          if [ "${{ matrix.goos }}" = "darwin" ]; then
+            bash scripts/build-runtime-darwin.sh "${{ matrix.runtime }}" "runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst"
+          else
+            docker run --rm \
+              -v "$(pwd)":/workspace \
+              -w /workspace \
+              mahou-builder \
+              bash scripts/build-runtime-linux.sh "${{ matrix.runtime }}" "runtimebundle/assets/runtime-${{ matrix.runtime }}.tar.zst"
+            sudo chmod -R a+rw runtimebundle/assets/
+          fi
+
+      - name: Test
+        run: |
+          libpath=$(go run ./runtimebundle/printlibpath)
+          echo "Runtime lib path: ${libpath}"
+          if [ "${{ matrix.goos }}" = "darwin" ]; then
+            export DYLD_LIBRARY_PATH="${libpath}"
+          else
+            export LD_LIBRARY_PATH="${libpath}"
+          fi
+          go test ./...
+
+      - name: Build binary
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go build -o "dist/mahou-${{ matrix.runtime }}" ./cmd/mahou
+
+      - name: Doctor
+        run: |
+          "./dist/mahou-${{ matrix.runtime }}" doctor --verbose
+          "./dist/mahou-${{ matrix.runtime }}" doctor --json > doctor.json
+          formats="JPEG PNG WEBP TIFF HEIC SVG PDF"
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            formats="${formats} JXL"
+          fi
+          for format in ${formats}; do
+            grep -q "\"${format}\": true" doctor.json
+          done
+
+      - name: Package archive
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          version="${RELEASE_TAG#v}"
+          archive="mahou_${version}_${{ matrix.archive_os }}_${{ matrix.goarch }}.tar.gz"
+          package_dir="dist/package-${{ matrix.runtime }}"
+          mkdir -p "${package_dir}"
+          cp "dist/mahou-${{ matrix.runtime }}" "${package_dir}/mahou"
+          cp LICENSE README.md README.ja.md "${package_dir}/"
+          tar -C "${package_dir}" -czf "dist/${archive}" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.runtime }}
+          path: dist/mahou_*.tar.gz
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum *.tar.gz > checksums.txt
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" dist/*.tar.gz dist/checksums.txt --clobber
+          else
+            gh release create "${RELEASE_TAG}" dist/*.tar.gz dist/checksums.txt \
+              --title "${RELEASE_TAG}" \
+              --generate-notes
+          fi
