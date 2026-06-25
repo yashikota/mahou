@@ -14,6 +14,7 @@ func ConfigureEnvironment(root, configDir string) {
 	setenv("MAGICK_CODER_MODULE_PATH", coderPath)
 	setenv("MAGICK_FILTER_MODULE_PATH", filterPath)
 	prependPath("PATH", filepath.Join(root, "bin"))
+	setenv("LIBHEIF_PLUGIN_PATH", filepath.Join(root, "lib", "libheif"))
 	if runtime.GOOS == "darwin" {
 		prependPath("DYLD_LIBRARY_PATH", filepath.Join(root, "lib"))
 	} else {
@@ -40,6 +41,7 @@ func Environment(root, configDir string) map[string]string {
 		"MAGICK_CONFIGURE_PATH":     configurePath(root, configDir),
 		"MAGICK_CODER_MODULE_PATH":  coderPath,
 		"MAGICK_FILTER_MODULE_PATH": filterPath,
+		"LIBHEIF_PLUGIN_PATH":       filepath.Join(root, "lib", "libheif"),
 	}
 }
 

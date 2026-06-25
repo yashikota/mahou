@@ -84,7 +84,15 @@ func formatSupport(formats []string) map[string]bool {
 		set[f] = struct{}{}
 	}
 	support := make(map[string]bool)
-	for _, name := range []string{"JPEG", "PNG", "WEBP", "TIFF", "HEIC", "JXL", "SVG", "PDF"} {
+	for _, name := range []string{
+		"JPEG", "PNG", "WEBP", "TIFF", "GIF", "BMP", "ICO",
+		"HEIC", "AVIF", "JXL",
+		"SVG", "PDF", "EPS", "PS",
+		"EXR", "PSD", "DPX", "HDR",
+		"JP2",
+		"PNM",
+		"DNG",
+	} {
 		_, ok := set[name]
 		support[name] = ok
 	}
@@ -135,7 +143,15 @@ func printDoctor(r doctorReport, verbose bool) {
 			fmt.Fprintln(os.Stdout, " ", note)
 		}
 	}
-	for _, name := range []string{"JPEG", "PNG", "WEBP", "TIFF", "HEIC", "JXL", "SVG", "PDF"} {
+	for _, name := range []string{
+		"JPEG", "PNG", "WEBP", "TIFF", "GIF", "BMP", "ICO",
+		"HEIC", "AVIF", "JXL",
+		"SVG", "PDF", "EPS", "PS",
+		"EXR", "PSD", "DPX", "HDR",
+		"JP2",
+		"PNM",
+		"DNG",
+	} {
 		fmt.Fprintf(os.Stdout, "%s: %s\n", name, okText(r.FormatSupport[name]))
 	}
 	if verbose {
