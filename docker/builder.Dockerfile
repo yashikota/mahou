@@ -1,11 +1,9 @@
-FROM ubuntu:22.04
+FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MAHOU_BUILDER=1
 
-RUN apt-get update && apt-get install -y software-properties-common \
-  && add-apt-repository -y ppa:savoury1/ffmpeg5 \
-  && apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
   autoconf \
   automake \
   build-essential \

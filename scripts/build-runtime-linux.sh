@@ -19,8 +19,6 @@ fi
 
 if [ -z "${MAHOU_BUILDER:-}" ]; then
   sudo apt-get update
-  sudo apt-get install -y software-properties-common
-  sudo add-apt-repository -y ppa:savoury1/ffmpeg5
   sudo apt-get install -y \
     autoconf \
     automake \
