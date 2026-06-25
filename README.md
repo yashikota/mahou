@@ -30,7 +30,7 @@ tool with no system ImageMagick install and no CGO requirement.
 
 | Platform | Minimum version |
 | --- | --- |
-| Linux | GLIBC 2.36 (Debian 12 / Ubuntu 22.04 / RHEL 9 or later) |
+| Linux | GLIBC 2.35 (Ubuntu 22.04 / Debian 12 / RHEL 9 or later) |
 | macOS | macOS 14 Sonoma or later |
 
 ## Quick start
